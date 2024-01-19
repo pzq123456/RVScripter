@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.9.0/build/styles/default.min.css">
+    <script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.9.0/build/highlight.min.js"></script>
+</head>
+<body>
+    <div class="container">
+
+        <div class="left">
+            <label for="html-code">HTML</label>
+            <textarea id="html-code"></textarea>
+            <label for="css-code">CSS</label>
+            <textarea id="css-code"></textarea>
+            <label for="js-code">JS</label>
+            <div class="codearea" id="js-code" contenteditable="true">console.log("hi")</div>
+        </div>
+
+
+        <div class="right">
+            <div class="btns">
+                <button id="run">Run</button>
+                <button id="clear">Clear</button>
+            </div>
+
+            <iframe id="output"></iframe>
+            <div id="console-output">
+            </div>
+        </div>
+    </div>
+    <script type="module" src="main.js"></script>
+</body>
+</html>

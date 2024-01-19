@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dynamic Code Highlight</title>
+  <!-- 引入 highlight.js 的样式表和脚本 -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.7.2/styles/default.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.7.2/highlight.min.js"></script>
+  <style>
+    #container {
+      position: relative;
+    }
+
+    #codeContainer {
+      position: absolute;
+      top: 0;
+      left: 0;
+      z-index: 1;
+    }
+
+    #codeRender {
+      background-color: rgba(255, 255, 255, 0); /* 背景色透明 */
+      white-space: pre-wrap;
+      margin: 0; /* 修正代码块的默认外边距 */
+    }
+
+    #codeTextarea {
+      position: relative;
+      z-index: 2;
+      background-color: rgba(255, 255, 255, 0.5); /* 设置 textarea 背景色透明度 */
+    }
+  </style>
+</head>
+<body>
+
+<div id="container">
+  <div id="codeContainer">
+    <pre id="codeRender"></pre>
+  </div>
+  <textarea id="codeTextarea" spellcheck="false"></textarea>
+</div>
+
+<script>
+  function updateCodeHighlight() {
+    var codeTextarea = document.getElementById('codeTextarea');
+    var codeRender = document.getElementById('codeRender');
+    var code = codeTextarea.value;
+
+    // 渲染高亮代码
+    codeRender.innerHTML = code;
+    hljs.highlightBlock(codeRender);
+
+    // 设置 textarea 的高度，以匹配内容
+    codeTextarea.style.height = codeRender.offsetHeight + 'px';
+  }
+
+  // 添加事件监听器
+  var codeTextarea = document.getElementById('codeTextarea');
+  codeTextarea.addEventListener('input', updateCodeHighlight);
+
+  // 初始渲染
+  updateCodeHighlight();
+</script>
+
+</body>
+</html>

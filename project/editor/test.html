@@ -1,66 +1,58 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Dynamic Code Highlight</title>
-  <!-- 引入 highlight.js 的样式表和脚本 -->
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.7.2/styles/default.min.css">
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.7.2/highlight.min.js"></script>
-  <style>
-    #container {
-      position: relative;
-    }
-
-    #codeContainer {
-      position: absolute;
-      top: 0;
-      left: 0;
-      z-index: 1;
-    }
-
-    #codeRender {
-      background-color: rgba(255, 255, 255, 0); /* 背景色透明 */
-      white-space: pre-wrap;
-      margin: 0; /* 修正代码块的默认外边距 */
-    }
-
-    #codeTextarea {
-      position: relative;
-      z-index: 2;
-      background-color: rgba(255, 255, 255, 0.5); /* 设置 textarea 背景色透明度 */
-    }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Monaco Editor Demo</title>
+    <!-- 引入 Monaco Editor 的样式 -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.27.0/min/vs/editor/editor.main.min.css">
 </head>
 <body>
 
-<div id="container">
-  <div id="codeContainer">
-    <pre id="codeRender"></pre>
-  </div>
-  <textarea id="codeTextarea" spellcheck="false"></textarea>
-</div>
+<div id="editor" style="height: 300px;"></div>
 
+<!-- 引入 Monaco Editor 的脚本 -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.27.0/min/vs/loader.js"></script>
+<button id="run">run</button>
 <script>
-  function updateCodeHighlight() {
-    var codeTextarea = document.getElementById('codeTextarea');
-    var codeRender = document.getElementById('codeRender');
-    var code = codeTextarea.value;
+    // 初始化 Monaco Editor
+    require.config({ paths: { 'vs': 'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.27.0/min/vs' }});
+    require(['vs/editor/editor.main'], function() {
+        var editor = monaco.editor.create(document.getElementById('editor'), {
+            value: '// 在这里编写你的代码',
+            language: 'javascript', // 设置语言为 JavaScript
+            theme: 'vs-dark' // 设置编辑器主题
+        });
 
-    // 渲染高亮代码
-    codeRender.innerHTML = code;
-    hljs.highlightBlock(codeRender);
+        // 监听编辑器内容变化事件
+        editor.onDidChangeModelContent(function() {
+            // 在内容变化时执行的操作
+        });
 
-    // 设置 textarea 的高度，以匹配内容
-    codeTextarea.style.height = codeRender.offsetHeight + 'px';
-  }
+        // // 获取编辑器中的代码
+        // const codeToExecute = editor.getValue();
 
-  // 添加事件监听器
-  var codeTextarea = document.getElementById('codeTextarea');
-  codeTextarea.addEventListener('input', updateCodeHighlight);
+        // try {
+        // // 使用 Function 构造函数执行代码
+        // const executeCode = new Function(codeToExecute);
+        //     executeCode();
+        // } catch (error) {
+        //     console.error('Error executing code:', error);
+        // }
 
-  // 初始渲染
-  updateCodeHighlight();
+        let run = document.getElementById('run');
+        run.addEventListener('click', function() {
+            const codeToExecute = editor.getValue();
+            // console.log(codeToExecute);
+            try {
+                // 使用 Function 构造函数执行代码
+                const executeCode = new Function(codeToExecute);
+                executeCode();
+            } catch (error) {
+                console.error('Error executing code:', error);
+            }
+        });
+        });
 </script>
 
 </body>

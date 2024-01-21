@@ -9,7 +9,7 @@
 </head>
 <body>
 
-<div id="editor" style="height: 300px;"></div>
+<div id="editor" style="height: 300px; width: 600px;"></div>
 
 <!-- 引入 Monaco Editor 的脚本 -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.27.0/min/vs/loader.js"></script>
@@ -29,16 +29,16 @@
             // 在内容变化时执行的操作
         });
 
-        // // 获取编辑器中的代码
-        // const codeToExecute = editor.getValue();
+        // 获取编辑器中的代码
+        const codeToExecute = editor.getValue();
 
-        // try {
-        // // 使用 Function 构造函数执行代码
-        // const executeCode = new Function(codeToExecute);
-        //     executeCode();
-        // } catch (error) {
-        //     console.error('Error executing code:', error);
-        // }
+        try {
+        // 使用 Function 构造函数执行代码
+        const executeCode = new Function(codeToExecute);
+            executeCode();
+        } catch (error) {
+            console.error('Error executing code:', error);
+        }
 
         let run = document.getElementById('run');
         run.addEventListener('click', function() {

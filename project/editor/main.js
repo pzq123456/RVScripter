@@ -1,6 +1,3 @@
-// // 测试 highlightjs 引用是否成功
-// console.log(hljs);
-
 const myConsoleDiv = document.getElementById('console-output');
 // 转发 console.log() 等方法 用于直接在页面上显示
 const consoleTypes = ['log', 'warn', 'error', 'info', 'debug'];

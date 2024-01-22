@@ -15,9 +15,8 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.27.0/min/vs/loader.js"></script>
 <button id="run">run</button>
 <script>
-    // 初始化 Monaco Editor
     require.config({ paths: { 'vs': 'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.27.0/min/vs' }});
-    require(['vs/editor/editor.main'], function() {
+    require(['vs/editor/editor.main'], function() {        
         var editor = monaco.editor.create(document.getElementById('editor'), {
             value: '// 在这里编写你的代码',
             language: 'javascript', // 设置语言为 JavaScript
@@ -54,6 +53,7 @@
         });
         });
 </script>
-
+<!-- 引入 Leaflet 的脚本 -->
+<!-- <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script> -->
 </body>
 </html>

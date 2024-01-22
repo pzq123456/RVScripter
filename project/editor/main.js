@@ -1,6 +1,9 @@
+// 以下代码是将 console.log() 等方法的输出转发到页面上的代码
 const myConsoleDiv = document.getElementById('console-output');
+
 // 转发 console.log() 等方法 用于直接在页面上显示
 const consoleTypes = ['log', 'warn', 'error', 'info', 'debug'];
+
 consoleTypes.forEach(function (type) {
     let oldMethod = console[type];
     console[type] = function () {
@@ -17,19 +20,14 @@ window.onerror = function (message, source, lineno, colno, error) {
     return true;
 };
 
-// 转发 iframe 中的 console.log() 等方法
-const iframe = document.getElementById('output');
-const iframeWindow = iframe.contentWindow;
-const iframeConsole = iframeWindow.console;
-consoleTypes.forEach(function (type) {
-    let oldMethod = iframeConsole[type];
-    iframeConsole[type] = function () {
-        let message = Array.prototype.slice.apply(arguments).join(' ');
-        oldMethod.apply(iframeConsole, arguments);
-        CustomLogFunction(message, type, myConsoleDiv);
-    }
-});
-
+// style for each log type
+const logStyles = {
+    log: 'color: #fff',
+    warn: 'color: #ff0',
+    error: 'color: #f00',
+    info: 'color: #0f0',
+    debug: 'color: #1ff'
+};
 
 // 自定义的日志函数
 function CustomLogFunction(message, type, dom) {
@@ -43,67 +41,56 @@ function CustomLogFunction(message, type, dom) {
     consoleOutput.appendChild(logEntry);
 }
 
-// style for each log type
-const logStyles = {
-    log: 'color: #fff',
-    warn: 'color: #ff0',
-    error: 'color: #f00',
-    info: 'color: #0f0',
-    debug: 'color: #1ff'
-};
+// console 转发 end
 
-const runButton = document.getElementById('run');
-const clearButton = document.getElementById('clear');
-const htmlCode = document.getElementById('html-code');
-const cssCode = document.getElementById('css-code');
-const jsCode = document.getElementById('js-code');
-const outputFrame = document.getElementById('output');
-
-runButton.addEventListener('click', function () {
-    try {
-        // 获取文本框中的代码
-        const htmlContent = htmlCode.value;
-        const cssContent = cssCode.value;
-        const jsContent = jsCode.innerText;
-
-        // 在 iframe 中运行 HTML、CSS、JS
-        const outputDocument = outputFrame.contentDocument;
-        const head = outputDocument.querySelector('head');
-        const body = outputDocument.querySelector('body');
-
-        // Clear existing content
-        head.innerHTML = '';
-        body.innerHTML = '';
-
-        // Set new content
-        const styleElement = document.createElement('style');
-        styleElement.innerHTML = cssContent;
-        head.appendChild(styleElement);
-
-        body.innerHTML = htmlContent;
-
-        // Execute JavaScript code
-        const scriptElement = document.createElement('script');
-        scriptElement.innerHTML = `
-            try {
-                ${jsContent}
-            } catch (error) {
-                console.error('JavaScript error:', error.message);
-            }
-        `;
-        body.appendChild(scriptElement);
-    } catch (error) {
-        console.error('An error occurred:', error.message);
-        CustomLogFunction(error.message, 'error', myConsoleDiv);
-    }
+// 初始化 Monaco Editor
+require.config({
+    paths: { 'vs': 'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.27.0/min/vs' }
 });
 
+require(['vs/editor/editor.main'], function () {
+    const runButton = document.getElementById('run');
+    const clearButton = document.getElementById('clear');
+    const jsCode = document.getElementById('js-code');
+    const jsEditor = monaco.editor.create(jsCode, {
+        value: `const  L = window.L;
+const mymap = window.mymap;
+// Add a marker
+var marker = L.marker([51.505, -0.09]).addTo(mymap);
+// Add a popup to the marker
+marker.bindPopup("<b>Hello World!</b><br>This is a Leaflet demo.").openPopup();`,
+        language: 'javascript',
+        theme: 'vs-dark',
+        automaticLayout: true,
+        minimap: { enabled: false }
+    });
 
+    // 监听运行按钮的点击事件
+    runButton.addEventListener('click', function () {
+        // 获取文本框中的内容
+        const jsContent = jsEditor.getValue();
+        // 在当前页面中执行 JavaScript 代码
+        try {
+            // 使用 Function 构造函数执行代码
+            const executeCode = new Function(jsContent);
+            executeCode();
+        } catch (error) {
+            console.error('Error executing code:', error);
+            CustomLogFunction(error.message, 'error', myConsoleDiv);
+        }
+    });
 
-clearButton.addEventListener('click', function () {
-    // 清空文本框和输出区域
-    htmlCode.value = '';
-    cssCode.value = '';
-    jsCode.value = '';
-    outputFrame.contentDocument.body.innerHTML = '';
+    // 监听清空按钮的点击事件
+    clearButton.addEventListener('click', function () {
+        jsEditor.setValue('');
+    });
 });
+
+var mymap = L.map('map').setView([51.505, -0.09], 13);
+// mymap 绑定到 window 对象上，方便在控制台中调试
+window.mymap = mymap;
+window.L = L;
+// Add a tile layer
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '© OpenStreetMap contributors'
+}).addTo(mymap);

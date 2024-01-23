@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://cdn.jsdelivr.net/npm/interactjs@1.10.11/dist/interact.min.js"></script>
+    <style>
+        /* Styling for the draggable element */
+        .draggable {
+            cursor: grab;
+            user-select: none;
+            position: relative;
+            margin: 20px;
+            padding: 10px;
+            border: 1px solid #ccc;
+            background-color: #f0f0f0;
+        }
+    </style>
+    <title>Interact.js Draggable Demo</title>
+</head>
+<body>
+
+<!-- Draggable element -->
+<div class="draggable" id="draggableElement">
+    Drag me! Double-click me!
+</div>
+
+<script>
+    // Enable drag and double-click interactions using interact.js
+    interact('.draggable')
+        .draggable({
+            onmove: (event) => {
+                const target = event.target;
+                const x = (parseFloat(target.getAttribute('data-x')) || 0) + event.dx;
+                const y = (parseFloat(target.getAttribute('data-y')) || 0) + event.dy;
+
+                target.style.transform = `translate(${x}px, ${y}px)`;
+
+                target.setAttribute('data-x', x);
+                target.setAttribute('data-y', y);
+            }
+        })
+        .on('doubletap', (event) => {
+            console.log('Element entered edit mode!');
+            // Add your custom logic for entering edit mode here
+        });
+</script>
+
+</body>
+</html>

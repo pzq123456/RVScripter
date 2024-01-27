@@ -16,7 +16,7 @@ An online code-editable Geo-platform based on RVGeo.
 1. https://zhuanlan.zhihu.com/p/362259030
 2. 数字艺术效果示例：https://github.com/thi-ng/umbrella/blob/develop/examples/README.md
 3. 拖拽 node graph：https://demo.thi.ng/umbrella/estuary/
-4. https://github.com/sunag/flow
+
 
 ### 3. 可能的节点可视化编程前端架构（GLSL webGPU）
 1. https://polar.sh/emilwidlund/posts/alma-an-experimental-playground-for-generative-graphics
@@ -59,6 +59,14 @@ https://www.tinkercad.com/
 
 ### 6. 
 - Rate.js: https://retejs.org/
+- Flow: https://github.com/sunag/flow
+
+### 7. GIS 基础功能
+- https://www.geoman.io/
+
+### 8. 序列化与反序列化
+- https://tech.meituan.com/2015/02/26/serialization-vs-deserialization.html
+
 ## 大体思路
 0. 核心（Core）：RVGeo（根据 leaflet 重构后的）。我会参考leaflet的架构，对RVGeo进行重构，使其更加规范高效。并在此基础上实现基GIS 核心功能（可视化、简易交互式图形编辑）。可以说，该项目的核心就是一个高度精简的前端地理信息系统，然后我要在此基础上探索如何实现可视化编程（Visual Programming）。
 1. 代码编辑器：是下一步节点编辑器的基础。我需要在前端编写代码（暂定JS），为了项目的创新点，我会设计一种新的（地理表示）语言并为其设计一个编译器。该部分尚在探索中。新的地理表示语言及其编译器会是一个不错的创新点，同时，考虑到现在 ChatGPT 等技术的发展，我希望这种地理表示能够更加高效地帮助 ChatGPT 等技术进行地理信息的处理。（待定）

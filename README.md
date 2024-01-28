@@ -60,12 +60,16 @@ https://www.tinkercad.com/
 ### 6. 
 - Rate.js: https://retejs.org/
 - Flow: https://github.com/sunag/flow
+- https://github.com/mrdoob/three.js/tree/dev/playground
 
 ### 7. GIS 基础功能
 - https://www.geoman.io/
 
 ### 8. 序列化与反序列化
 - https://tech.meituan.com/2015/02/26/serialization-vs-deserialization.html
+
+### 9. SAM 遥感影像分割
+- https://github.com/opengeos/segment-geospatial
 
 ## 大体思路
 0. 核心（Core）：RVGeo（根据 leaflet 重构后的）。我会参考leaflet的架构，对RVGeo进行重构，使其更加规范高效。并在此基础上实现基GIS 核心功能（可视化、简易交互式图形编辑）。可以说，该项目的核心就是一个高度精简的前端地理信息系统，然后我要在此基础上探索如何实现可视化编程（Visual Programming）。

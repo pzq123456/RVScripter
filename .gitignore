@@ -161,3 +161,5 @@ cython_debug/
 
 # Mac
 .DS_Store
+paper/References/基于Cesium的岛屿We...S核心模块的设计与集成实现_张庆军.pdf
+paper/References/基于JavaScript的WebGIS前端开发及优化_李昕煜.pdf

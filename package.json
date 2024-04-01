@@ -1,0 +1,29 @@
+{
+  "name": "vite-vue-typescript-starter",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vue-tsc && vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "core-js": "^3.6.5",
+    "rete": "2.0.1",
+    "rete-area-plugin": "2.0.0",
+    "rete-connection-plugin": "2.0.0",
+    "rete-render-utils": "2.0.1",
+    "rete-vue-plugin": "2.0.0",
+    "tslib": "2.3.1",
+    "vue": "^3.4.21",
+    "vue-router": "4.1.6",
+    "vuex": "^4.0.0-0"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-vue": "^5.0.4",
+    "typescript": "^5.2.2",
+    "vite": "^5.2.6",
+    "vue-tsc": "^2.0.7"
+  }
+}

@@ -7,7 +7,7 @@ yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
-/paper
+/paper/References
 /node_modules
 dist
 dist-ssr
@@ -23,5 +23,3 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
-paper/README.md
-paper/README.md

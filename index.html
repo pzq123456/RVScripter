@@ -1,38 +1,38 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Vite + Vue + TS</title>
-  </head>
-  <body>
-    <div id="app"></div>
-    <div id="stage">
-      <canvas id="ui-layer" width="480" height="320"></canvas>
-      <canvas id="game-layer" width="480" height="320"></canvas>
-      <canvas id="background-layer" width="480" height="320"></canvas>
-    </div>
-    
-    <style>
-      #stage {
-        width: 480px;
-        height: 320px;
-        position: relative;
-        border: 2px solid black;
-      }
-      canvas {
-        position: absolute;
-      }
-      #ui-layer {
-        z-index: 3;
-      }
-      #game-layer {
-        z-index: 2;
-      }
-      #background-layer {
-        z-index: 1;
-      }
-    </style>
-  </body>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Editor</title>
+</head>
+<body>
+  
+  <div id="stage">
+    <canvas id="ui-layer" width="480" height="320"></canvas>
+    <canvas id="game-layer" width="480" height="320"></canvas>
+    <canvas id="background-layer" width="480" height="320"></canvas>
+  </div>
+
+  <script type="module" src="main.js"></script>
+  <style>
+    #stage {
+      width: 480px;
+      height: 320px;
+      position: relative;
+      border: 2px solid black;
+    }
+    canvas {
+      position: absolute;
+    }
+    #ui-layer {
+      z-index: 3;
+    }
+    #game-layer {
+      z-index: 2;
+    }
+    #background-layer {
+      z-index: 1;
+    }
+  </style>  
+</body>
 </html>

@@ -1,0 +1,10 @@
+canvas {
+    position: absolute;
+}
+
+#ui-layer {
+    z-index: 2;
+}
+#game-layer {
+    z-index: 1;
+}

@@ -2,3 +2,7 @@ body {
     display: flex;
     margin: 0;
 }
+
+canvas {
+    cursor: none; /* 禁用原生鼠标光标 */
+}

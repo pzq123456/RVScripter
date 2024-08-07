@@ -1,28 +1,33 @@
-import { uuid } from './utils.js';
-
 /**
- * this class will create and maintain two canvas layers (exactally vertial in Z axis) like:
+ * this class will create and maintain two canvas #layers (exactally vertial in Z axis) like:
  * root\ zIndexFrom = 0 (e.g.)
  *  game Layer\ zIndex = 1
  *  text Layer\ zIndex = 2
  *  control Layer\ zIndex = 3
  */
 export class Canvas{
+    #uuid;
+    #width;
+    #height;
+    #layers;
+    #parentElement;
+
     constructor(
         parentElement = null,
-        id = 'editor',
         width = 1024, 
         height = 1024, 
         zIndexFrom = 0 
     ){
-        this.uuid = uuid();
-        this.width = width;
-        this.height = height;
-        this.parentElement = parentElement;
-        this.id = id;
+
+        this.#uuid = uuid();
+        this.#width = width;
+        this.#height = height;
+
+        this.#parentElement = parentElement;
         this.zIndexFrom = zIndexFrom;
+
         this.root = null;
-        this.layers = null;
+        this.#layers = null;
 
         this.#createRoot();
         this.#createCanvas();
@@ -30,16 +35,43 @@ export class Canvas{
     }
 
     getCtx(name){
-        return this.layers[name].getContext('2d');
+        return this.#layers[name].getContext('2d');
     }
 
-    getControlLayer(){
-        return this.layers["control"];
+    get ControlLayer(){
+        return this.#layers["control"];
+    }
+
+    get uuid(){
+        return this.#uuid;
+    }
+
+    get width(){
+        return this.#width;
+    }
+
+    get height(){
+        return this.#height;
+    }
+
+    /**
+     * @param {HTMLElement} newParent
+     */
+    set parentElement(newParent){
+        // this.#parentElement = newParent;
+        // 首先释放原来的父元素
+        if(this.#parentElement){
+            this.#parentElement.removeChild(this.root);
+        }
+        // 然后重新设置父元素
+        this.#parentElement = newParent;
+        this.#appendRoot();
+
     }
 
     #createRoot(){
         this.root = document.createElement('div');
-        this.root.id = this.id +"-"+this.uuid;
+        this.root.id = +"-"+this.uuid;
 
         let style = {
             width: this.width + 'px',
@@ -52,12 +84,11 @@ export class Canvas{
         for(let key in style){
             this.root.style[key] = style[key];
         }
-
     }
 
     #appendRoot(){
-        if(this.parentElement){
-            this.parentElement.appendChild(this.root);
+        if(this.#parentElement){
+            this.#parentElement.appendChild(this.root);
         }else{
             document.body.appendChild(this.root);
         }
@@ -66,11 +97,11 @@ export class Canvas{
     #createCanvas(){
         let canvasLayerNames = ["game","text","control"];
         let zIndex = this.zIndexFrom + 1;
-        this.layers = {};
+        this.#layers = {};
         for(let i = 0; i < canvasLayerNames.length; i++){
             let name = canvasLayerNames[i];
             let layer = this.#createCanvasLayer(name, zIndex);
-            this.layers[name] = layer;
+            this.#layers[name] = layer;
             this.root.appendChild(layer);
             zIndex++;
         }
@@ -80,7 +111,7 @@ export class Canvas{
         let myCanvas = document.createElement('canvas');
         myCanvas.width = this.width;
         myCanvas.height = this.height;
-        myCanvas.id = this.id + "-" + name + "-" + this.uuid;
+        myCanvas.id = + "-" + name + "-" + this.uuid;
         myCanvas.style.position = 'absolute';
         myCanvas.style.zIndex = z;
 

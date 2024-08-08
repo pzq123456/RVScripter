@@ -58,15 +58,9 @@ export class Canvas{
      * @param {HTMLElement} newParent
      */
     set parentElement(newParent){
-        // this.#parentElement = newParent;
-        // 首先释放原来的父元素
-        if(this.#parentElement){
-            this.#parentElement.removeChild(this.root);
-        }
         // 然后重新设置父元素
         this.#parentElement = newParent;
         this.#appendRoot();
-
     }
 
     #createRoot(){

@@ -34,3 +34,28 @@ function parseColor(color){
     }
     return color;
 }
+
+// 防抖函数
+function debounce(fn, delay = 100) {
+    let timer = null;
+    return function() {
+        clearTimeout(timer);
+        timer = setTimeout(() => {
+            fn.apply(this, arguments);
+        }, delay);
+    };
+}
+
+function transform(XY, matrix = [1, 0, 0, 1, 0, 0]){
+    let [x, y] = XY;
+    let [
+        a, b, 
+        c, d, 
+        e, f
+    ] = matrix;
+
+    return [
+        a * x + c * y + e,
+        b * x + d * y + f
+    ];
+}

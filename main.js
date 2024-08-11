@@ -20,17 +20,7 @@ const viewWindow = { // 实际绘制的视窗
     zoom : 1 
 }
 
-const viewMatrix = [ // 视窗变换矩阵
-    1, 0,
-    0, -1,
-    -viewWindow.x, viewWindow.y
-]
 
-const reverseMatrix = [ // 逆变换矩阵
-    1, 0,
-    0, -1,
-    viewWindow.x, viewWindow.y
-]
 
 const testVector = [ // 测试向量
     [256,-128],
@@ -44,6 +34,18 @@ const MAXEXTENT = 20037508.342789244;
 const MAXLAT = 85.05112877980659;
 
 function draw(x, y) {
+
+    const viewMatrix = [ // 视窗变换矩阵
+        1, 0,
+        0, -1,
+        -viewWindow.x, viewWindow.y
+    ]
+    
+    const reverseMatrix = [ // 逆变换矩阵
+        1, 0,
+        0, -1,
+        viewWindow.x, viewWindow.y
+    ]
 
     gameCtx.clearRect(0, 0, canvas.width, canvas.height);
 
@@ -103,6 +105,36 @@ canvas.addEventListener('mousemove', (event) => {
     const x = event.clientX - rect.left;
     const y = event.clientY - rect.top;
     // 控制更新频率
+    throttle(draw(x, y));
+});
+
+// 添加键盘事件
+document.addEventListener('keydown', (event) => {
+    let x = viewWindow.x;
+    let y = viewWindow.y;
+    
+    let step = 10;
+    switch (event.key) {
+        // wasd
+        case 'w':
+            y -= step;
+            break;
+        case 's':
+            y += step;
+            break;
+        case 'a':
+            x += step;
+            break;
+        case 'd':
+            x -= step;
+            break;
+        default:
+            break;
+    }
+
+    viewWindow.x = x;
+    viewWindow.y = y;
+
     throttle(draw(x, y));
 });
 

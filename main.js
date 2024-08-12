@@ -15,17 +15,10 @@ const gameCtx = canvasLayer.getCtx("game");
 const viewWindow = { // 实际绘制的视窗
     x : -128,
     y : 128,
-    width : 512,
-    height : 512,
+    width : 1024,
+    height : 1024,
     zoom : 1 
 }
-
-
-
-const testVector = [ // 测试向量
-    [256,-128],
-    [256,64]
-]
 
 let textArea = null;
 let pointer = null;
@@ -34,6 +27,21 @@ const MAXEXTENT = 20037508.342789244;
 const MAXLAT = 85.05112877980659;
 
 function draw(x, y) {
+
+    let windowVector = [
+        [viewWindow.x, viewWindow.y],
+        [viewWindow.x + viewWindow.width, viewWindow.y - viewWindow.height]
+    ]
+
+    let Xaxis = [ // X轴
+        [0, 0],
+        [viewWindow.width, 0]
+    ]
+
+    let Yaxis = [ // Y轴
+        [0, 0],
+        [0, viewWindow.height]
+    ]
 
     const viewMatrix = [ // 视窗变换矩阵
         1, 0,
@@ -49,10 +57,10 @@ function draw(x, y) {
 
     gameCtx.clearRect(0, 0, canvas.width, canvas.height);
 
-    let [ox, oy] = transform(testVector[0], viewMatrix);
-    let [tx, ty] = transform(testVector[1], viewMatrix);
+    drawTransformedVector(windowVector, viewMatrix);
 
-    drawVector([ox, oy], [tx, ty]);
+    drawTransformedVector(Xaxis, viewMatrix);
+    drawTransformedVector(Yaxis, viewMatrix);
 
     if(!pointer){
         controlctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -80,7 +88,6 @@ function draw(x, y) {
     textCtx.font = '20px serif';
     // let textWidth = Math.floor(textCtx.measureText(`(${x}, ${y})`).width + 20);
     let textWidth = Math.floor(textCtx.measureText(`(${revX}, ${revY})`).width + 20);
-
 
     // 超出范围检测 并调整
     if(x +  textWidth >= canvas.width){
@@ -110,6 +117,11 @@ canvas.addEventListener('mousemove', (event) => {
 
 // 添加键盘事件
 document.addEventListener('keydown', (event) => {
+
+    const rect = canvas.getBoundingClientRect();
+    const pointerX = event.clientX - rect.left;
+    const pointerY = event.clientY - rect.top;
+
     let x = viewWindow.x;
     let y = viewWindow.y;
     
@@ -135,12 +147,22 @@ document.addEventListener('keydown', (event) => {
     viewWindow.x = x;
     viewWindow.y = y;
 
-    throttle(draw(x, y));
+    throttle(draw(pointerX, pointerY));
 });
 
+function center(){
+    centerAt(100, 100);
+}
+
+function centerAt(x = 0, y = 0){
+    viewWindow.x = x - viewWindow.width / 2;
+    viewWindow.y = y + viewWindow.height / 2;
+    throttle(draw(x, y));
+}
+
 const toolbarConfig = [
-    { name: 'Save', action: change },
-    { name: 'Load', action: () => console.log('Load clicked') },
+    { name: 'change', action: change },
+    { name: 'center', action: center },
     { name: 'Delete', action: () => console.log('Delete clicked') }
 ];
 
@@ -183,6 +205,12 @@ function drawPointerX(x, y, size = 10){
     controlctx.lineTo(x - size, y + size);
     controlctx.strokeStyle = 'red';
     controlctx.stroke();
+}
+
+function drawTransformedVector(vector, matrix = viewMatrix, size = 30){
+    let [ox, oy] = transform(vector[0], matrix);
+    let [tx, ty] = transform(vector[1], matrix);
+    drawVector([ox, oy], [tx, ty]);
 }
 
 function drawVector(O, XY, size = 30){

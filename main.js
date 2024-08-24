@@ -1,5 +1,10 @@
 import { Canvas } from "./src/canvas.js";
 import { createToolbar } from "./src/helper.js";
+
+import { project } from "./src/projection.js";
+
+// console.log(project([-180, -85]));
+
 const left = document.getElementById('left');
 const right = document.getElementById('right');
 

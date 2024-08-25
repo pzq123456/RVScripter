@@ -1,44 +1,143 @@
-/*
- * Spherical Mercator projection — the most common projection for online maps,
- * used by almost all free and commercial tile providers. Assumes that Earth is
- * a sphere. Used by the `EPSG:3857` CRS.
+/**
+ * @see https://learn.microsoft.com/en-us/bingmaps/articles/bing-maps-tile-system
  */
 
-const A = 6378137.0;
-const MAXEXTENT = 20037508.342789244;
-const MAXLAT = 85.05112877980659;
+const EarthRadius = 6378137;
+const MinLatitude = -85.05112878;
+const MaxLatitude = 85.05112878;
+const MinLongitude = -180;
+const MaxLongitude = 180;
 
 /**
- * Convert lon/lat values to 900913 x/y.
- * - EPSG:3857 = EPSG:900913 (@link https://epsg.io/900913)
- * @param {Array} lonlat `[lon, lat]` array of geographic coordinates.
- * @returns {Array} `[x, y]` array of geographic coordinates.
+ * Clips a number to the specified minimum and maximum values.
  */
-export function project(lonlat){
-    let d = Math.PI / 180,
-        max = MAXLAT,
-        lat = Math.max(Math.min(max, lonlat[1]), -max),
-        sin = Math.sin(lat * d);
-
-    let x = A * lonlat[0] * d;
-    let y = A * Math.log((1 + sin) / (1 - sin)) / 2;
-    // see: https://en.wikipedia.org/wiki/Mercator_projection
-
-    if (y > MAXEXTENT) y = MAXEXTENT;
-    if (y < -MAXEXTENT) y = -MAXEXTENT;
-    if (x > MAXEXTENT) x = MAXEXTENT;
-    if (x < -MAXEXTENT) x = -MAXEXTENT;
-
-    return [x, y];
+function Clip(n, minValue, maxValue) {
+    return Math.min(Math.max(n, minValue), maxValue);
 }
 
 /**
- * Convert 900913 x/y values to lon/lat.
- * - EPSG:3857 = EPSG:900913 (@link https://epsg.io/900913)
- * @param {Array} point `[x, y]` array of geographic coordinates.
- * @returns {Array} `[lon, lat]` array of geographic coordinates.
+ * Determines the map width and height (in pixels) at a specified level of detail.
  */
-export function unproject(point) {
-    let d = 180 / Math.PI;
-    return [point[0] * d / A, (2 * Math.atan(Math.exp(point[1] / A)) - Math.PI / 2) * d];
+function MapSize(levelOfDetail) {
+    return 256 << levelOfDetail;
+}
+
+/**
+ * Determines the ground resolution (in meters per pixel) at a specified latitude and level of detail.
+ */
+function GroundResolution(latitude, levelOfDetail) {
+    latitude = Clip(latitude, MinLatitude, MaxLatitude);
+    return Math.cos(latitude * Math.PI / 180) * 2 * Math.PI * EarthRadius / MapSize(levelOfDetail);
+}
+
+/**
+ * Determines the map scale at a specified latitude, level of detail, and screen resolution.
+ * @param {number} latitude Latitude (in degrees) at which to measure the map scale.
+ * @param {number} levelOfDetail Level of detail, from 1 (lowest detail) to 23 (highest detail).
+ * @param {number} screenDpi Resolution of the screen, in dots per inch.
+ * @returns The map scale, expressed as the denominator N of the ratio 1 : N.
+ */
+function MapScale(latitude, levelOfDetail, screenDpi) {
+    return GroundResolution(latitude, levelOfDetail) * screenDpi / 0.0254;
+}
+
+/**
+ * Converts a point from latitude/longitude WGS-84 coordinates (in degrees) into pixel XY coordinates at a specified level of detail.
+ * @param {number} latitude Latitude of the point, in degrees.
+ * @param {number} longitude Longitude of the point, in degrees.
+ * @param {number} levelOfDetail Level of detail, from 1 (lowest detail) to 23 (highest detail).
+ * @returns The pixel XY coordinates.
+ */
+export function LatLongToPixelXY(latitude, longitude, levelOfDetail) {
+    latitude = Clip(latitude, MinLatitude, MaxLatitude);
+    longitude = Clip(longitude, MinLongitude, MaxLongitude);
+
+    let x = (longitude + 180) / 360;
+    let sinLatitude = Math.sin(latitude * Math.PI / 180);
+    let y = 0.5 - Math.log((1 + sinLatitude) / (1 - sinLatitude)) / (4 * Math.PI);
+
+    let mapSize = MapSize(levelOfDetail);
+    return [
+        Clip(x * mapSize + 0.5, 0, mapSize - 1),
+        Clip(y * mapSize + 0.5, 0, mapSize - 1)
+    ];
+}
+
+/**
+ * Converts a pixel from pixel XY coordinates at a specified level of detail into latitude/longitude WGS-84 coordinates (in degrees).
+ * @param {number} pixelX X coordinate of the point, in pixels.
+ * @param {number} pixelY Y coordinates of the point, in pixels.
+ * @param {number} levelOfDetail Level of detail, from 1 (lowest detail) to 23 (highest detail).
+ * @returns The latitude and longitude in degrees.
+ */
+function PixelXYToLatLong(pixelX, pixelY, levelOfDetail) {
+    let mapSize = MapSize(levelOfDetail);
+    let x = (Clip(pixelX, 0, mapSize - 1) / mapSize) - 0.5;
+    let y = 0.5 - (Clip(pixelY, 0, mapSize - 1) / mapSize);
+
+    let latitude = 90 - 360 * Math.atan(Math.exp(-y * 2 * Math.PI)) / Math.PI;
+    let longitude = 360 * x;
+    return [latitude, longitude];
+}
+
+/*
+* Converts pixel XY coordinates into tile XY coordinates of the tile containing the specified pixel.
+*/
+function PixelXYToTileXY(pixelX, pixelY) {
+    return [pixelX / 256, pixelY / 256];
+}
+
+function TileXYToPixelXY(tileX, tileY) {
+    return [tileX * 256, tileY * 256];
+}
+
+/**
+ * Converts tile XY coordinates into a QuadKey at a specified level of detail.
+ * @param {number} tileX Tile X coordinate.
+ * @param {number} tileY Tile Y coordinate.
+ * @param {number} levelOfDetail Level of detail, from 1 (lowest detail) to 23 (highest detail).
+ * @returns A string containing the QuadKey.
+ * @see https://docs.microsoft.com/en-us/bingmaps/articles/bing-maps-tile-system
+ */
+function TileXYToQuadKey(tileX, tileY, levelOfDetail) {
+    let quadKey = "";
+    for (let i = levelOfDetail; i > 0; i--) {
+        let digit = '0';
+        let mask = 1 << (i - 1);
+        if ((tileX & mask) !== 0) {
+            digit++;
+        }
+        if ((tileY & mask) !== 0) {
+            digit++;
+            digit++;
+        }
+        quadKey += digit;
+    }
+    return quadKey;
+}
+
+function QuadKeyToTileXY(quadKey) {
+    let tileX = 0;
+    let tileY = 0;
+    let levelOfDetail = quadKey.length;
+    for (let i = levelOfDetail; i > 0; i--) {
+        let mask = 1 << (i - 1);
+        switch (quadKey[levelOfDetail - i]) {
+            case '0':
+                break;
+            case '1':
+                tileX |= mask;
+                break;
+            case '2':
+                tileY |= mask;
+                break;
+            case '3':
+                tileX |= mask;
+                tileY |= mask;
+                break;
+            default:
+                throw new Error("Invalid QuadKey digit sequence.");
+        }
+    }
+    return [tileX, tileY];
 }

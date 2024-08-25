@@ -5,6 +5,7 @@
  *  text Layer\ zIndex = 2
  *  control Layer\ zIndex = 3
  */
+
 export class Canvas{
     #uuid;
     #width;
@@ -14,6 +15,7 @@ export class Canvas{
 
     constructor(
         parentElement = null,
+        layerNames = ["game", "text", "control"],
         width = 1024, 
         height = 1024, 
         zIndexFrom = 0 
@@ -30,7 +32,7 @@ export class Canvas{
         this.#layers = null;
 
         this.#createRoot();
-        this.#createCanvas();
+        this.#createCanvas(layerNames);
         this.#appendRoot();
     }
 
@@ -39,7 +41,12 @@ export class Canvas{
     }
 
     get ControlLayer(){
-        return this.#layers["control"];
+        if(this.#layers["control"]){
+            return this.#layers["control"];
+        }else{
+            let keys = Object.keys(this.#layers);
+            return this.#layers[keys[keys.length - 1]];
+        }
     }
 
     get uuid(){
@@ -65,7 +72,7 @@ export class Canvas{
 
     #createRoot(){
         this.root = document.createElement('div');
-        this.root.id = +"-"+this.uuid;
+        this.root.id = "layer-"+this.uuid;
 
         let style = {
             width: this.width + 'px',
@@ -88,8 +95,8 @@ export class Canvas{
         }
     }
 
-    #createCanvas(){
-        let canvasLayerNames = ["game","text","control"];
+    #createCanvas(layerNames = ["game", "text", "control"]){
+        let canvasLayerNames = layerNames;
         let zIndex = this.zIndexFrom + 1;
         this.#layers = {};
         for(let i = 0; i < canvasLayerNames.length; i++){
@@ -105,7 +112,7 @@ export class Canvas{
         let myCanvas = document.createElement('canvas');
         myCanvas.width = this.width;
         myCanvas.height = this.height;
-        myCanvas.id = + "-" + name + "-" + this.uuid;
+        myCanvas.id = name + "-" + this.uuid;
         myCanvas.style.position = 'absolute';
         myCanvas.style.zIndex = z;
 

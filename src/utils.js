@@ -59,3 +59,44 @@ function transform(XY, matrix = [1, 0, 0, 1, 0, 0]){
         b * x + d * y + f
     ];
 }
+
+/**
+ * 获取屏幕 DPI
+ */
+function getScreenDPI(){
+    let div = document.createElement('div');
+    div.style = 'width: 1in; height: 1in; position: absolute; left: -100%; top: -100%;';
+    document.body.appendChild(div);
+    let dpi = getComputedStyle(div).getPropertyValue('width');
+    document.body.removeChild(div);
+    return parseInt(dpi);
+}
+
+function applyOperationInNestedArray(arr, operation) {
+    return arr.map(element => {
+        if (Array.isArray(element[0])) {
+            return applyOperationInNestedArray(element, operation);
+        } else if (element.length === 2 && !Array.isArray(element[0])) {
+            return operation(element);
+        } else {
+            return element;
+        }
+    });
+}
+
+// // 示例 operation 函数：交换 [x, y] 的位置
+function swapXY([x, y]) {
+    return [y, x];
+}
+
+// parse float
+function parseFloatArray(arr){
+    return arr.map(Number);
+}
+
+// // 示例使用：
+// const nestedArray = [[[[[1, 2], [3, 4]], [[5, 6], [7, 8]]]]];
+// const result = applyOperationInNestedArray(nestedArray, swapXY);
+
+// console.log(result);
+

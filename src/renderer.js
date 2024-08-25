@@ -120,9 +120,9 @@ export class Renderer {
 
         // 并行操作
         Object.keys(parsedData).forEach(key => {
-            parsedData[key].forEach(({ coordinates, properties }) => {
+            parsedData[key].forEach(({ coordinates}) => {
                 const screenCoords = applyOperationInNestedArray(coordinates, convertToScreenCoords);
-                screenCoor[key].push({coordinates: screenCoords, properties});
+                screenCoor[key].push({coordinates: screenCoords});
             });
         });
 

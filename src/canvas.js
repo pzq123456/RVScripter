@@ -40,6 +40,10 @@ export class Canvas{
         return this.#layers[name].getContext('2d');
     }
 
+    getLayer(name){
+        return this.#layers[name];
+    }
+
     get ControlLayer(){
         if(this.#layers["control"]){
             return this.#layers["control"];

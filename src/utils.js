@@ -72,6 +72,10 @@ function getScreenDPI(){
     return parseInt(dpi);
 }
 
+/**
+ * This function is usefull when you have a nested array like this(like GeoJSON coordinates):
+ * [[[x1,y1],[x2,y2]...]] do any operation on each element([x,y]) and put the result in place.
+ */
 function applyOperationInNestedArray(arr, operation) {
     return arr.map(element => {
         if (Array.isArray(element[0])) {
@@ -84,19 +88,15 @@ function applyOperationInNestedArray(arr, operation) {
     });
 }
 
-// // 示例 operation 函数：交换 [x, y] 的位置
-function swapXY([x, y]) {
-    return [y, x];
+// 截流函数
+function throttle(fn, delay = 100) {
+    let timer = null;
+    return function() {
+        if (!timer) {
+            timer = setTimeout(() => {
+                fn.apply(this, arguments);
+                timer = null;
+            }, delay);
+        }
+    };
 }
-
-// parse float
-function parseFloatArray(arr){
-    return arr.map(Number);
-}
-
-// // 示例使用：
-// const nestedArray = [[[[[1, 2], [3, 4]], [[5, 6], [7, 8]]]]];
-// const result = applyOperationInNestedArray(nestedArray, swapXY);
-
-// console.log(result);
-

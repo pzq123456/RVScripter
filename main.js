@@ -14,19 +14,17 @@ const renderer = new Renderer(mapCanvas);
 renderer.setFillColor('rgba(255, 0, 0, 0.3)');
 renderer.setStrokeColor('green', 2);
 
-const zoomLevel = 2;
+let zoomLevel = 2;
 
-const viewCenter = [-158,21];
+let viewCenter = [116,36];
 
-function project([x,y],z = zoomLevel){
+function project([x,y], z = zoomLevel){
     return LatLongToPixelXY(y,x,z);
 }
 
-function unproject([x,y],z = zoomLevel){
+function unproject([x,y], z = zoomLevel){
     return PixelXYToLatLong(x,y,z);
 }
-
-
 
 let viewWindow = { // 实际绘制的视窗
     x : project(viewCenter)[0] - 512,
@@ -37,7 +35,7 @@ let viewWindow = { // 实际绘制的视窗
     zoom : zoomLevel
 }
 
-console.log(viewWindow);
+// console.log(viewWindow);
 
 function translate([x,y]){
     return [x - viewWindow.x, y - viewWindow.y];
@@ -48,7 +46,8 @@ function untranslate([x,y]){
 }
 
 processGeoJSONData('./data/data.json').then(parsedData => {
-    renderer.render(parsedData, project, translate);
+    // renderer.render(parsedData, project, translate);
+    renderer.injectData(parsedData);
 });
 
 const controlCanvas = canvasGroup.ControlLayer;
@@ -112,8 +111,30 @@ controlCanvas.addEventListener('mousemove', (event) => {
     const x = event.clientX - rect.left;
     const y = event.clientY - rect.top;
 
-    // 控制更新频率
     throttle(draw(x, y));
+});
+
+// 添加滚轮事件
+controlCanvas.addEventListener('wheel', (event) => {
+    // 鼠标滚轮控制 zoomLevel 在 0 - 20 个整数之间
+    zoomLevel -= Math.sign(event.deltaY);
+    if(zoomLevel < 0){
+        zoomLevel = 0;
+    }else if(zoomLevel > 20){
+        zoomLevel = 20;
+    }
+
+    // update viewWindow
+    viewWindow = {
+        x : project(viewCenter)[0] - 512,
+        y : project(viewCenter)[1] - 512,
+        center: viewCenter,
+        width : 1024,
+        height : 1024,
+        zoom : zoomLevel
+    }
+
+    renderer.update(zoomLevel, project, translate);
 });
 
 function drawPointer(x, y, size = 10, type = "x"){

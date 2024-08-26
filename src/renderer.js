@@ -7,6 +7,13 @@ export class Renderer {
         this.currentFillColor = null;
         this.currentStrokeColor = null;
         this.currentLineWidth = null;
+        this.screenCache = new Map();
+        this.data = null;
+    }
+
+    injectData(data) {
+        this.data = data;
+        console.log(data);
     }
 
     clearCanvas() {
@@ -104,12 +111,9 @@ export class Renderer {
         this.ctx.stroke();
     }
 
-    render(parsedData, ...operations) {
-        this.clearCanvas();
+    screenfy(parsedData, ...operations) {
         let convertToScreenCoords = pipeline(...operations);
-
-        // // 通过 convertToScreenCoords 函数将地理坐标转换为屏幕坐标
-
+        // 通过 convertToScreenCoords 函数将地理坐标转换为屏幕坐标
         let screenCoor = {
             points: [],
             lines: [],
@@ -121,14 +125,26 @@ export class Renderer {
 
         // 并行操作
         Object.keys(parsedData).forEach(key => {
-            parsedData[key].forEach(({ coordinates}) => {
+            parsedData[key].forEach(({coordinates}) => {
                 const screenCoords = applyOperationInNestedArray(coordinates, convertToScreenCoords);
                 screenCoor[key].push({coordinates: screenCoords});
             });
         });
 
-        console.log(screenCoor);
+        return screenCoor;
+    }
 
+    update(zoomLevel, ...operations) {
+        let screenCoor = this.screenCache.get(zoomLevel);
+        if (!screenCoor) {
+            screenCoor = this.screenfy(this.data, ...operations);
+            this.screenCache.set(zoomLevel, screenCoor);
+        }
+        this.render(screenCoor);
+    }
+
+    render(screenCoor) {
+        this.clearCanvas();
         // 绘制
         this.setFillColor('red');
         this.drawPoints(screenCoor.points);

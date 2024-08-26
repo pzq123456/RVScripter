@@ -73,8 +73,8 @@ function getScreenDPI(){
 }
 
 /**
- * This function is usefull when you have a nested array like this(like GeoJSON coordinates):
- * [[[x1,y1],[x2,y2]...]] do any operation on each element([x,y]) and put the result in place.
+ * This function is usefull when you have a nested array like this(eg. GeoJSON coordinates):
+ * [[[x1,y1],[x2,y2]...]] do any operation on each element([x,y]) and return the result in place.
  */
 function applyOperationInNestedArray(arr, operation) {
     return arr.map(element => {
@@ -86,6 +86,15 @@ function applyOperationInNestedArray(arr, operation) {
             return element;
         }
     });
+}
+
+// 管道函数 将多个函数组合成一个函数
+function pipeline(...operations) {
+    return function(input) {
+        return operations.reduce((acc, operation) => {
+            return operation(acc);
+        }, input);
+    };
 }
 
 // 截流函数

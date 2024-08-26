@@ -70,7 +70,7 @@ export function LatLongToPixelXY(latitude, longitude, levelOfDetail) {
  * @param {number} levelOfDetail Level of detail, from 1 (lowest detail) to 23 (highest detail).
  * @returns The latitude and longitude in degrees.
  */
-function PixelXYToLatLong(pixelX, pixelY, levelOfDetail) {
+export function PixelXYToLatLong(pixelX, pixelY, levelOfDetail) {
     let mapSize = MapSize(levelOfDetail);
     let x = (Clip(pixelX, 0, mapSize - 1) / mapSize) - 0.5;
     let y = 0.5 - (Clip(pixelY, 0, mapSize - 1) / mapSize);
@@ -78,6 +78,7 @@ function PixelXYToLatLong(pixelX, pixelY, levelOfDetail) {
     let latitude = 90 - 360 * Math.atan(Math.exp(-y * 2 * Math.PI)) / Math.PI;
     let longitude = 360 * x;
     return [latitude, longitude];
+    // return [0,0]
 }
 
 /*

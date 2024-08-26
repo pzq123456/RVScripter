@@ -104,8 +104,9 @@ export class Renderer {
         this.ctx.stroke();
     }
 
-    render(parsedData, convertToScreenCoords) {
+    render(parsedData, ...operations) {
         this.clearCanvas();
+        let convertToScreenCoords = pipeline(...operations);
 
         // // 通过 convertToScreenCoords 函数将地理坐标转换为屏幕坐标
 

@@ -1,5 +1,5 @@
 export class Renderer {
-    constructor(canvas) {
+    constructor(canvas, viewWindow) {
         this.canvas = canvas;
         this.ctx = canvas.getContext('2d');
         this.width = canvas.width;
@@ -9,6 +9,7 @@ export class Renderer {
         this.currentLineWidth = null;
         this.screenCache = new Map();
         this.data = null;
+        this.viewWindow = viewWindow;
     }
 
     injectData(data) {

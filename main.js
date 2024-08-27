@@ -11,18 +11,18 @@ const left = document.getElementById('left');
 const canvasGroup = new Canvas(left,["map","text","control"]);
 
 const mapCanvas = canvasGroup.getLayer("map");
-const renderer = new Renderer(mapCanvas);
 
-renderer.setFillColor('rgba(255, 0, 0, 0.3)');
-renderer.setStrokeColor('green', 2);
+
 
 let zoomLevel = 2;
 
-// let viewCenter = [116,36];
-let viewCenter = [0,0];
-
+let viewCenter = [116,36];
 
 let viewWindow = new ViewWindow(viewCenter, 1024, 1024, zoomLevel);
+const renderer = new Renderer(mapCanvas, viewWindow);
+
+renderer.setFillColor('rgba(255, 0, 0, 0.3)');
+renderer.setStrokeColor('green', 2);
 
 let project = viewWindow.project.bind(viewWindow);
 let unproject = viewWindow.unproject.bind(viewWindow);
@@ -42,6 +42,7 @@ const textCtx = textCanvas.getContext('2d');
 
 let textArea = null;
 let pointer = null;
+let pointerType = "x";
 
 function draw(x,y){
     if(!pointer){
@@ -53,10 +54,10 @@ function draw(x,y){
     pointer = {
         x: x,
         y: y,
-        size: 10
+        size: 16
     }
 
-    drawPointer(x, y, pointer.size);
+    drawPointer(x, y, pointer.size, pointerType);
 
     if(!textArea){
         textCtx.clearRect(0, 0, canvasGroup.width, canvasGroup.height);
@@ -90,7 +91,6 @@ function draw(x,y){
     }
 }
 
-// drug
 let isDragging = false;
 let lastX;
 let lastY;
@@ -99,28 +99,39 @@ controlCanvas.addEventListener('mousedown', (event) => {
     isDragging = true;
     lastX = event.clientX;
     lastY = event.clientY;
+    pointerType = "o";
 });
 
 controlCanvas.addEventListener('mouseup', () => {
     isDragging = false;
+    pointerType = "x";
 });
 
 controlCanvas.addEventListener('mousemove', (event) => {
     const rect = controlCanvas.getBoundingClientRect();
     let x = event.clientX - rect.left;
     let y = event.clientY - rect.top;
+    draw(x, y);
 
-    throttle(draw(x, y));
-    throttle(drawMap(x,y));
+    if (!isDragging) return;
+
+
+
+    requestAnimationFrame(() => {
+        drawMap(x, y);
+    });
 
 });
 
-function drawMap(x,y){
-    if(isDragging){
+function drawMap(x, y) {
+    if (isDragging) {
         let dx = x - lastX;
         let dy = y - lastY;
-        viewWindow.updateXY(dx / 100, dy / 100);
+        viewWindow.updateXY(dx, dy);
         renderer.update(zoomLevel, project, translate);
+        
+        lastX = x;
+        lastY = y;
     }
 }
 
@@ -128,7 +139,7 @@ function drawMap(x,y){
 // 添加滚轮事件
 controlCanvas.addEventListener('wheel', (event) => {
     // 鼠标滚轮控制 zoomLevel 在 0 - 20 个整数之间
-    zoomLevel -= Math.sign(event.deltaY) / 10;
+    zoomLevel -= Math.sign(event.deltaY);
 
     if(zoomLevel < 0){
         zoomLevel = 0;
@@ -159,9 +170,9 @@ function drawPointerO(x, y, size = 10){
     size /= 2;
     controlctx.beginPath();
     controlctx.arc(x, y, size, 0, Math.PI * 2); // 绘制自定义光标（一个圆形）
-    controlctx.fillStyle = 'red'; // 自定义光标颜色
+    controlctx.fillStyle = 'green'; // 自定义光标颜色
     controlctx.fill();
-    controlctx.strokeStyle = 'black';
+    controlctx.strokeStyle = 'white';
     controlctx.stroke();
 }
 
@@ -172,6 +183,6 @@ function drawPointerX(x, y, size = 10){
     controlctx.lineTo(x + size, y + size);
     controlctx.moveTo(x + size, y - size);
     controlctx.lineTo(x - size, y + size);
-    controlctx.strokeStyle = 'red';
+    controlctx.strokeStyle = 'green';
     controlctx.stroke();
 }

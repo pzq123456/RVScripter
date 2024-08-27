@@ -111,43 +111,25 @@ controlCanvas.addEventListener('mousemove', (event) => {
     let y = event.clientY - rect.top;
 
     throttle(draw(x, y));
+    throttle(drawMap(x,y));
 
-    // // drag map
+});
+
+function drawMap(x,y){
     if(isDragging){
-        let dx = event.clientX - lastX;
-        let dy = event.clientY - lastY;
+        let dx = x - lastX;
+        let dy = y - lastY;
         viewWindow.updateXY(dx / 100, dy / 100);
         renderer.update(zoomLevel, project, translate);
     }
+}
 
-});
-
-// 添加使用键盘控制视窗移动
-document.addEventListener('keydown', (event) => {
-    switch (event.key) {
-        case 'ArrowLeft':
-            viewWindow.updateXY(viewWindow.x + 10, viewWindow.y);
-            break;
-        case 'ArrowRight':
-            viewWindow.updateXY(viewWindow.x - 10, viewWindow.y);
-            break;
-        case 'ArrowUp':
-            viewWindow.updateXY(viewWindow.x, viewWindow.y + 10);
-            break;
-        case 'ArrowDown':
-            viewWindow.updateXY(viewWindow.x, viewWindow.y - 10);
-            break;
-        default:
-            break;
-    }
-
-    renderer.update(zoomLevel, project, translate);
-});
 
 // 添加滚轮事件
 controlCanvas.addEventListener('wheel', (event) => {
     // 鼠标滚轮控制 zoomLevel 在 0 - 20 个整数之间
-    zoomLevel -= Math.sign(event.deltaY);
+    zoomLevel -= Math.sign(event.deltaY) / 10;
+
     if(zoomLevel < 0){
         zoomLevel = 0;
     }else if(zoomLevel > 20){

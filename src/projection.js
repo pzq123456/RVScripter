@@ -30,6 +30,22 @@ function GroundResolution(latitude, levelOfDetail) {
     return Math.cos(latitude * Math.PI / 180) * 2 * Math.PI * EarthRadius / MapSize(levelOfDetail);
 }
 
+
+/**
+ * Determines the ground resolution (in degrees per pixel) at a specified latitude and level of detail.
+ */
+export function GroundResolutionInDegrees(latitude, levelOfDetail) {
+    latitude = Clip(latitude, MinLatitude, MaxLatitude);
+    
+    // Original meters per pixel resolution
+    var metersPerPixel = Math.cos(latitude * Math.PI / 180) * 2 * Math.PI * EarthRadius / MapSize(levelOfDetail);
+    
+    // Convert to degrees per pixel
+    var metersPerDegree = 111320 * Math.cos(latitude * Math.PI / 180);
+    return metersPerPixel / metersPerDegree;
+}
+
+
 /**
  * Determines the map scale at a specified latitude, level of detail, and screen resolution.
  * @param {number} latitude Latitude (in degrees) at which to measure the map scale.

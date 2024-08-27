@@ -111,9 +111,8 @@ export class Renderer {
         this.ctx.stroke();
     }
 
-    screenfy(parsedData, ...operations) {
-        let convertToScreenCoords = pipeline(...operations);
-        // 通过 convertToScreenCoords 函数将地理坐标转换为屏幕坐标
+    operate(parsedData, projection) {
+        // 将地理坐标转换为屏幕坐标
         let screenCoor = {
             points: [],
             lines: [],
@@ -126,7 +125,11 @@ export class Renderer {
         // 并行操作
         Object.keys(parsedData).forEach(key => {
             parsedData[key].forEach(({coordinates}) => {
-                const screenCoords = applyOperationInNestedArray(coordinates, convertToScreenCoords);
+                // arr 判空 若空则跳过
+                if (!coordinates.length) {
+                    return;
+                }
+                const screenCoords = applyOperationInNestedArray(coordinates, projection);
                 screenCoor[key].push({coordinates: screenCoords});
             });
         });
@@ -134,12 +137,16 @@ export class Renderer {
         return screenCoor;
     }
 
-    update(zoomLevel, ...operations) {
-        let screenCoor = this.screenCache.get(zoomLevel);
+    update(zoomLevel, projct, translate) {
+        let screenCoor = this.screenCache.get(zoomLevel); // cache
+
         if (!screenCoor) {
-            screenCoor = this.screenfy(this.data, ...operations);
+            screenCoor = this.operate(this.data, projct); // Rasterize
             this.screenCache.set(zoomLevel, screenCoor);
         }
+
+        screenCoor = this.operate(screenCoor, translate); // Translate
+
         this.render(screenCoor);
     }
 

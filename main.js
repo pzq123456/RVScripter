@@ -4,6 +4,8 @@ import { LatLongToPixelXY, PixelXYToLatLong } from "./src/projection.js";
 
 import { processGeoJSONData } from "./src/geoJSON.js";
 
+import { ViewWindow } from "./src/viewWindow.js";
+
 const left = document.getElementById('left');
 
 const canvasGroup = new Canvas(left,["map","text","control"]);
@@ -16,38 +18,20 @@ renderer.setStrokeColor('green', 2);
 
 let zoomLevel = 2;
 
-let viewCenter = [116,36];
+// let viewCenter = [116,36];
+let viewCenter = [0,0];
 
-function project([x,y], z = zoomLevel){
-    return LatLongToPixelXY(y,x,z);
-}
 
-function unproject([x,y], z = zoomLevel){
-    return PixelXYToLatLong(x,y,z);
-}
+let viewWindow = new ViewWindow(viewCenter, 1024, 1024, zoomLevel);
 
-let viewWindow = { // 实际绘制的视窗
-    x : project(viewCenter)[0] - 512,
-    y : project(viewCenter)[1] - 512,
-    center: viewCenter,
-    width : 1024,
-    height : 1024,
-    zoom : zoomLevel
-}
-
-// console.log(viewWindow);
-
-function translate([x,y]){
-    return [x - viewWindow.x, y - viewWindow.y];
-}
-
-function untranslate([x,y]){
-    return [x + viewWindow.x, y + viewWindow.y];
-}
+let project = viewWindow.project.bind(viewWindow);
+let unproject = viewWindow.unproject.bind(viewWindow);
+let translate = viewWindow.translate.bind(viewWindow);
+let untranslate = viewWindow.untranslate.bind(viewWindow);
 
 processGeoJSONData('./data/data.json').then(parsedData => {
-    // renderer.render(parsedData, project, translate);
     renderer.injectData(parsedData);
+    renderer.update(zoomLevel, project, translate);
 });
 
 const controlCanvas = canvasGroup.ControlLayer;
@@ -106,12 +90,58 @@ function draw(x,y){
     }
 }
 
+// drug
+let isDragging = false;
+let lastX;
+let lastY;
+
+controlCanvas.addEventListener('mousedown', (event) => {
+    isDragging = true;
+    lastX = event.clientX;
+    lastY = event.clientY;
+});
+
+controlCanvas.addEventListener('mouseup', () => {
+    isDragging = false;
+});
+
 controlCanvas.addEventListener('mousemove', (event) => {
     const rect = controlCanvas.getBoundingClientRect();
-    const x = event.clientX - rect.left;
-    const y = event.clientY - rect.top;
+    let x = event.clientX - rect.left;
+    let y = event.clientY - rect.top;
 
     throttle(draw(x, y));
+
+    // // drag map
+    if(isDragging){
+        let dx = event.clientX - lastX;
+        let dy = event.clientY - lastY;
+        viewWindow.updateXY(dx / 100, dy / 100);
+        renderer.update(zoomLevel, project, translate);
+    }
+
+});
+
+// 添加使用键盘控制视窗移动
+document.addEventListener('keydown', (event) => {
+    switch (event.key) {
+        case 'ArrowLeft':
+            viewWindow.updateXY(viewWindow.x + 10, viewWindow.y);
+            break;
+        case 'ArrowRight':
+            viewWindow.updateXY(viewWindow.x - 10, viewWindow.y);
+            break;
+        case 'ArrowUp':
+            viewWindow.updateXY(viewWindow.x, viewWindow.y + 10);
+            break;
+        case 'ArrowDown':
+            viewWindow.updateXY(viewWindow.x, viewWindow.y - 10);
+            break;
+        default:
+            break;
+    }
+
+    renderer.update(zoomLevel, project, translate);
 });
 
 // 添加滚轮事件
@@ -125,14 +155,7 @@ controlCanvas.addEventListener('wheel', (event) => {
     }
 
     // update viewWindow
-    viewWindow = {
-        x : project(viewCenter)[0] - 512,
-        y : project(viewCenter)[1] - 512,
-        center: viewCenter,
-        width : 1024,
-        height : 1024,
-        zoom : zoomLevel
-    }
+    viewWindow.updateZ(zoomLevel);
 
     renderer.update(zoomLevel, project, translate);
 });

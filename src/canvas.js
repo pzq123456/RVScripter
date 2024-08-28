@@ -16,8 +16,8 @@ export class Canvas{
     constructor(
         parentElement = null,
         layerNames = ["game", "text", "control"],
-        width = 1024, 
-        height = 1024, 
+        width = 2048, 
+        height = 512, 
         zIndexFrom = 0 
     ){
 

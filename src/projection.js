@@ -18,7 +18,7 @@ function Clip(n, minValue, maxValue) {
 /**
  * Determines the map width and height (in pixels) at a specified level of detail.
  */
-function MapSize(levelOfDetail) {
+export function MapSize(levelOfDetail) {
     return 256 << levelOfDetail;
 }
 
@@ -44,7 +44,6 @@ export function GroundResolutionInDegrees(latitude, levelOfDetail) {
     var metersPerDegree = 111320 * Math.cos(latitude * Math.PI / 180);
     return metersPerPixel / metersPerDegree;
 }
-
 
 /**
  * Determines the map scale at a specified latitude, level of detail, and screen resolution.

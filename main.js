@@ -1,9 +1,7 @@
 import { Canvas } from "./src/canvas.js";
 import { Renderer } from "./src/renderer.js";
-import { LatLongToPixelXY, PixelXYToLatLong } from "./src/projection.js";
 
 import { processGeoJSONData } from "./src/geoJSON.js";
-
 import { ViewWindow } from "./src/viewWindow.js";
 
 const left = document.getElementById('left');
@@ -13,12 +11,11 @@ const canvasGroup = new Canvas(left,["map","text","control"]);
 const mapCanvas = canvasGroup.getLayer("map");
 
 
-
 let zoomLevel = 2;
 
 let viewCenter = [116,36];
 
-let viewWindow = new ViewWindow(viewCenter, 1024, 1024, zoomLevel);
+let viewWindow = new ViewWindow(viewCenter, canvasGroup.width, canvasGroup.height, zoomLevel);
 const renderer = new Renderer(mapCanvas, viewWindow);
 
 renderer.setFillColor('rgba(255, 0, 0, 0.3)');
@@ -118,7 +115,7 @@ controlCanvas.addEventListener('mousemove', (event) => {
 
 
     requestAnimationFrame(() => {
-        drawMap(x, y);
+        throttle(drawMap(x, y));
     });
 
 });
@@ -140,7 +137,10 @@ function drawMap(x, y) {
 controlCanvas.addEventListener('wheel', (event) => {
     // 鼠标滚轮控制 zoomLevel 在 0 - 20 个整数之间
     zoomLevel -= Math.sign(event.deltaY);
+    throttle(drawZoom(zoomLevel,3000));
+});
 
+function drawZoom(zoomLevel){
     if(zoomLevel < 0){
         zoomLevel = 0;
     }else if(zoomLevel > 20){
@@ -149,9 +149,8 @@ controlCanvas.addEventListener('wheel', (event) => {
 
     // update viewWindow
     viewWindow.updateZ(zoomLevel);
-
     renderer.update(zoomLevel, project, translate);
-});
+}
 
 function drawPointer(x, y, size = 10, type = "x"){
     switch (type) {

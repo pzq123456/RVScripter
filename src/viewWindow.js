@@ -1,4 +1,4 @@
-import { LatLongToPixelXY, PixelXYToLatLong, GroundResolutionInDegrees } from "./projection.js";
+import { LatLongToPixelXY, PixelXYToLatLong, GroundResolutionInDegrees} from "./projection.js";
 
 export class ViewWindow{
     constructor(viewCenter, width = 1024, height = 1024, zoomLevel){
@@ -11,6 +11,7 @@ export class ViewWindow{
         this.y = this.project(this.center)[1] - this.height / 2;
 
         this.maxZoomLevel = 18;
+        this.minZoomLevel = 2;
     }
 
     update(){ // 重新计算视窗的位置
@@ -19,7 +20,10 @@ export class ViewWindow{
     }
 
     updateZ(zoomLevel){
-        this.zoom = zoomLevel > this.maxZoomLevel ? this.maxZoomLevel : zoomLevel;
+        if(zoomLevel > this.maxZoomLevel || zoomLevel < this.minZoomLevel){
+            return;
+        }
+        this.zoom = zoomLevel;
         this.update();
     }
 
@@ -29,11 +33,19 @@ export class ViewWindow{
     }
 
     updateXY(dx,dy){
-        let dLat = dy * GroundResolutionInDegrees(this.center[0], this.zoom);
-        let dLon = dx * GroundResolutionInDegrees(this.center[0], this.zoom);
+        this.x -= dx;
+        this.y -= dy;
+
+        const resolution = GroundResolutionInDegrees(this.center[1], this.zoom);
+        let dLon = dx * resolution;
+        let dLat = dy * resolution;
         this.center = [this.center[0] - dLon, this.center[1] + dLat];
-        this.update();
     }
+
+    // updateCenter(x,y){
+    //     this.center = this.unproject([x,y]);
+    //     this.update();
+    // }
 
     project([x,y], z = this.zoom){
         return LatLongToPixelXY(y,x,z);

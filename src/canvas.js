@@ -17,7 +17,7 @@ export class Canvas{
         parentElement = null,
         layerNames = ["game", "text", "control"],
         width = 2048, 
-        height = 512, 
+        height = 1024, 
         zIndexFrom = 0 
     ){
 

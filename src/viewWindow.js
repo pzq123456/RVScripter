@@ -11,7 +11,12 @@ export class ViewWindow{
         this.y = this.project(this.center)[1] - this.height / 2;
 
         this.maxZoomLevel = 18;
-        this.minZoomLevel = 2;
+    }
+
+    getbbox(){
+        let [x1,y1] = this.unproject([this.x, this.y]);
+        let [x2,y2] = this.unproject([this.x + this.width, this.y + this.height]);
+        return [x1,y1,x2,y2];
     }
 
     update(){ // 重新计算视窗的位置
@@ -20,10 +25,7 @@ export class ViewWindow{
     }
 
     updateZ(zoomLevel){
-        if(zoomLevel > this.maxZoomLevel || zoomLevel < this.minZoomLevel){
-            return;
-        }
-        this.zoom = zoomLevel;
+        this.zoom = zoomLevel > this.maxZoomLevel ? this.maxZoomLevel : zoomLevel;
         this.update();
     }
 
@@ -41,11 +43,6 @@ export class ViewWindow{
         let dLat = dy * resolution;
         this.center = [this.center[0] - dLon, this.center[1] + dLat];
     }
-
-    // updateCenter(x,y){
-    //     this.center = this.unproject([x,y]);
-    //     this.update();
-    // }
 
     project([x,y], z = this.zoom){
         return LatLongToPixelXY(y,x,z);

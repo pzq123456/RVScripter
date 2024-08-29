@@ -4,6 +4,8 @@ import { Renderer } from "./src/renderer.js";
 import { processGeoJSONData } from "./src/geoJSON.js";
 import { ViewWindow } from "./src/viewWindow.js";
 
+import { requestTile } from "./src/tileUtils.js";
+
 const left = document.getElementById('left');
 
 const canvasGroup = new Canvas(left,["map","text","control"]);
@@ -186,4 +188,27 @@ function drawPointerX(x, y, size = 10){
     controlctx.lineTo(x - size, y + size);
     controlctx.strokeStyle = 'green';
     controlctx.stroke();
+}
+
+// request tile and then add it to body
+let tileList = [
+    [0,0,0],
+    [1,0,0],
+    [1,1,0],
+    [1,0,1],
+    [1,1,1],
+];
+
+tileList.forEach(([z, x, y]) => {
+    addTile(z, x, y);
+});
+
+function addTile(z, x, y){
+    requestTile(z, x, y).then((img) => {
+        img.width = 256;
+        img.height = 256;
+        left.appendChild(img);
+    }).catch(e => {
+        console.log(e);
+    });
 }

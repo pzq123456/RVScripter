@@ -8,6 +8,10 @@ const MaxLatitude = 85.05112878;
 const MinLongitude = -180;
 const MaxLongitude = 180;
 
+export function ClipbyBoundaries([latitude, longitude], bound = [MinLatitude, MaxLatitude, MinLongitude, MaxLongitude]) {
+    return [Clip(latitude, bound[0], bound[1]), Clip(longitude, bound[2], bound[3])];
+}
+
 /**
  * Clips a number to the specified minimum and maximum values.
  */

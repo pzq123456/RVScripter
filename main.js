@@ -124,7 +124,7 @@ function drawMap(x, y) {
     if (isDragging) {
         let dx = x - lastX;
         let dy = y - lastY;
-        viewWindow.updateXY(dx, dy);
+        viewWindow.updateXY(-dx, -dy);
         renderer.update(zoomLevel, project, translate);
         lastX = x;
         lastY = y;
@@ -134,8 +134,8 @@ function drawMap(x, y) {
 
 // 添加滚轮事件
 controlCanvas.addEventListener('wheel', (event) => {
-    let x = event.clientX - controlCanvas.getBoundingClientRect().left;
-    let y = event.clientY - controlCanvas.getBoundingClientRect().top;
+    // let x = event.clientX - controlCanvas.getBoundingClientRect().left;
+    // let y = event.clientY - controlCanvas.getBoundingClientRect().top;
     // 鼠标滚轮控制 zoomLevel 在 0 - 20 个整数之间
     zoomLevel -= Math.sign(event.deltaY);
     
@@ -149,10 +149,18 @@ function drawZoom(zoomLevel){
         zoomLevel = 20;
     }
     viewWindow.updateZ(zoomLevel);
-    // update viewWindow
     renderer.update(zoomLevel, project, translate);
-    // console.log(viewWindow.getbbox());
 }
+
+// 使用
+document.addEventListener('keydown', (event) => {
+    if(event.key == "w"){
+        zoomLevel += 1;}
+    else if(event.key == "s"){
+        zoomLevel -= 1;
+    }
+    drawZoom(zoomLevel);
+});
 
 function drawPointer(x, y, size = 10, type = "x"){
     switch (type) {

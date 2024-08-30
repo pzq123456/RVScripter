@@ -1,4 +1,4 @@
-import { LatLongToPixelXY, PixelXYToLatLong, GroundResolutionInDegrees} from "./projection.js";
+import { LatLongToPixelXY, PixelXYToLatLong, GroundResolutionInDegrees, ClipbyBoundaries} from "./projection.js";
 
 export class ViewWindow{
     constructor(viewCenter, width = 1024, height = 1024, zoomLevel){
@@ -20,7 +20,7 @@ export class ViewWindow{
     }
 
     getbbox(){
-        return [-this.x, -this.y, -this.x + this.width, -this.y + this.height];
+        return [this.x, this.y, this.x + this.width, this.y + this.height];
     }
 
     update(){ // 重新计算视窗的位置
@@ -39,13 +39,14 @@ export class ViewWindow{
     }
 
     updateXY(dx,dy){
-        this.x -= dx;
-        this.y -= dy;
+        this.x += dx;
+        this.y += dy;
 
         const resolution = GroundResolutionInDegrees(this.center[1], this.zoom);
+        // zoomlevel 相关的衰减系数 zoomlevel 越小，dx,dy 对应的经纬度变化越小
         let dLon = dx * resolution;
         let dLat = dy * resolution;
-        this.center = [this.center[0] - dLon, this.center[1] + dLat];
+        this.center = ClipbyBoundaries([this.center[1] - dLat, this.center[0] + dLon]).reverse();
     }
 
     project([x,y], z = this.zoom){

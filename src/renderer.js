@@ -14,7 +14,7 @@ export class Renderer {
 
     injectData(data) {
         this.data = data;
-        console.log(data);
+        this.ctx.font = '40px serif';
     }
 
     clearCanvas() {
@@ -22,11 +22,12 @@ export class Renderer {
     }
 
     drawBbox(bbox) {
+        const [x1, y1, x2, y2] = bbox;
         this.ctx.beginPath();
-        this.ctx.moveTo(bbox[0], bbox[1]);
-        this.ctx.lineTo(bbox[2], bbox[1]);
-        this.ctx.lineTo(bbox[2], bbox[3]);
-        this.ctx.lineTo(bbox[0], bbox[3]);
+        this.ctx.moveTo(x1, y1);
+        this.ctx.lineTo(x2, y1);
+        this.ctx.lineTo(x2, y2);
+        this.ctx.lineTo(x1, y2);
         this.ctx.closePath();
         this.ctx.stroke();
     }
@@ -185,9 +186,10 @@ export class Renderer {
         this.drawMultiPolygons(screenCoor.multiPolygons);
 
         // 绘制视窗
-        const [x1, y1, x2, y2] = this.viewWindow.getbbox();
+        // const [x1, y1, x2, y2] = this.viewWindow.getbbox();
         this.setStrokeColor('black', 2);
-        this.drawBbox([x1, y1, x2, y2]);
-
+        // this.drawBbox([x1, y1, x2, y2]);
+        // in the center of bbox text the viewCenter and zoomlevel
+        this.ctx.fillText(`Center: ${this.viewWindow.center}, Zoom: ${this.viewWindow.zoom}`,0, 40);
     }
 }

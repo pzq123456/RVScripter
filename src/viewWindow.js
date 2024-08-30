@@ -13,6 +13,18 @@ export class ViewWindow{
         this.maxZoomLevel = 18;
     }
 
+    getXY(){
+        return [this.x, this.y];
+    }
+
+    getTileGrids(){
+        return {
+            width: 256 * Math.pow(2, this.zoom),
+            height: 256 * Math.pow(2, this.zoom),
+            parts: Math.pow(2, this.zoom)
+        }
+    }
+
     getGeobbox(){
         let [x1,y1] = this.unproject([this.x, this.y]);
         let [x2,y2] = this.unproject([this.x + this.width, this.y + this.height]);

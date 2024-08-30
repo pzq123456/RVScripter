@@ -121,6 +121,7 @@ controlCanvas.addEventListener('mousemove', (event) => {
 });
 
 function drawMap(x, y) {
+
     if (isDragging) {
         let dx = x - lastX;
         let dy = y - lastY;
@@ -129,6 +130,7 @@ function drawMap(x, y) {
         lastX = x;
         lastY = y;
     }
+
 }
 
 
@@ -138,7 +140,6 @@ controlCanvas.addEventListener('wheel', (event) => {
     // let y = event.clientY - controlCanvas.getBoundingClientRect().top;
     // 鼠标滚轮控制 zoomLevel 在 0 - 20 个整数之间
     zoomLevel -= Math.sign(event.deltaY);
-    
     drawZoom(zoomLevel)
 });
 
@@ -205,15 +206,18 @@ let tileList = [
     [1,1,1],
 ];
 
-tileList.forEach(([z, x, y]) => {
-    addTile(z, x, y);
-});
+// tileList.forEach(([z, x, y]) => {
+//     addTile(z, x, y);
+// });
 
-function addTile(z, x, y){
+function addTile(z = 0, x = 0, y = 0){
     requestTile(z, x, y).then((img) => {
         img.width = 256;
         img.height = 256;
         left.appendChild(img);
+        // draw img in canvas
+        // mapCanvas.getContext('2d').drawImage(img, 0, 0,img.width, img.height, x * img.width, y * img.height, img.width, img.height);
+
     }).catch(e => {
         console.log(e);
     });

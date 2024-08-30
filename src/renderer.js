@@ -17,19 +17,15 @@ export class Renderer {
         this.ctx.font = '40px serif';
     }
 
-    clearCanvas() {
-        this.ctx.clearRect(0, 0, this.width, this.height);
+    clearCanvas(x = 0, y = 0) {
+        this.ctx.clearRect(x, y, this.width, this.height);
     }
 
-    drawBbox(bbox) {
-        const [x1, y1, x2, y2] = bbox;
-        this.ctx.beginPath();
-        this.ctx.moveTo(x1, y1);
-        this.ctx.lineTo(x2, y1);
-        this.ctx.lineTo(x2, y2);
-        this.ctx.lineTo(x1, y2);
-        this.ctx.closePath();
-        this.ctx.stroke();
+    setTranslate([x, y]) {
+        this.ctx.restore();
+        this.ctx.save();
+        this.ctx.translate(-x, -y);
+        this.clearCanvas(x,y);
     }
 
     setFillColor(color) {
@@ -67,6 +63,44 @@ export class Renderer {
             }
         });
         this.ctx.stroke();
+    }
+
+    // debug function
+    drawTileGrids(tileGrids){
+       // 根据 parts 分割画布 width height 为画布的宽高
+        const {width, height, parts} = tileGrids;
+        const partHeight = width / parts;
+        const partWidth = height / parts;
+        this.ctx.beginPath();
+        for(let i = 0; i < parts; i++){
+            this.ctx.moveTo(i * partWidth, 0);
+            this.ctx.lineTo(i * partWidth, height);
+        }
+        for(let i = 0; i < parts; i++){
+            this.ctx.moveTo(0, i * partHeight);
+            this.ctx.lineTo(width, i * partHeight);
+        }
+        this.ctx.stroke();
+
+        // 绘制网格右边界
+        this.ctx.font = '30px serif';
+        for(let i = 0; i < parts; i++){
+            this.ctx.fillText(i, i * partWidth, height);
+        }
+        // 绘制网格下边界
+        for(let i = 0; i < parts; i++){
+            this.ctx.fillText(i, width, i * partHeight);
+        }
+
+        // 并在每个网格的中心绘制坐标
+        this.ctx.font = '30px serif';
+        for(let i = 0; i < parts; i++){
+            for(let j = 0; j < parts; j++){
+                const x = i * partWidth + partWidth / 2;
+                const y = j * partHeight + partHeight / 2;
+                this.ctx.fillText(`(${i},${j})`, x, y);
+            }
+        }
     }
 
     drawPolygons(polygons) {
@@ -157,13 +191,14 @@ export class Renderer {
             this.screenCache.set(zoomLevel, screenCoor);
         }
 
-        screenCoor = this.operate(screenCoor, translate); // Translate
-
+        // screenCoor = this.operate(screenCoor, translate); // Translate
+        this.setTranslate(this.viewWindow.getXY());
         this.render(screenCoor);
+        this.drawTileGrids(this.viewWindow.getTileGrids());
     }
 
     render(screenCoor) {
-        this.clearCanvas();
+        // this.clearCanvas();
         // 绘制
         this.setFillColor('red');
         this.drawPoints(screenCoor.points);
@@ -187,9 +222,11 @@ export class Renderer {
 
         // 绘制视窗
         // const [x1, y1, x2, y2] = this.viewWindow.getbbox();
-        this.setStrokeColor('black', 2);
-        // this.drawBbox([x1, y1, x2, y2]);
-        // in the center of bbox text the viewCenter and zoomlevel
+        // // this.setStrokeColor('black', 2);
+        // // this.drawBbox([x1, y1, x2, y2]);
+        // // in the center of bbox text the viewCenter and zoomlevel
+        this.setFillColor('green');
         this.ctx.fillText(`Center: ${this.viewWindow.center}, Zoom: ${this.viewWindow.zoom}`,0, 40);
+
     }
 }

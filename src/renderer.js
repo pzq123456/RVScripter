@@ -21,6 +21,16 @@ export class Renderer {
         this.ctx.clearRect(0, 0, this.width, this.height);
     }
 
+    drawBbox(bbox) {
+        this.ctx.beginPath();
+        this.ctx.moveTo(bbox[0], bbox[1]);
+        this.ctx.lineTo(bbox[2], bbox[1]);
+        this.ctx.lineTo(bbox[2], bbox[3]);
+        this.ctx.lineTo(bbox[0], bbox[3]);
+        this.ctx.closePath();
+        this.ctx.stroke();
+    }
+
     setFillColor(color) {
         if (this.currentFillColor !== color) {
             this.ctx.fillStyle = color;
@@ -173,5 +183,11 @@ export class Renderer {
         this.setFillColor('yellow');
         this.setStrokeColor('brown', 1);
         this.drawMultiPolygons(screenCoor.multiPolygons);
+
+        // 绘制视窗
+        const [x1, y1, x2, y2] = this.viewWindow.getbbox();
+        this.setStrokeColor('black', 2);
+        this.drawBbox([x1, y1, x2, y2]);
+
     }
 }

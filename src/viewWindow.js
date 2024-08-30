@@ -13,10 +13,14 @@ export class ViewWindow{
         this.maxZoomLevel = 18;
     }
 
-    getbbox(){
+    getGeobbox(){
         let [x1,y1] = this.unproject([this.x, this.y]);
         let [x2,y2] = this.unproject([this.x + this.width, this.y + this.height]);
         return [x1,y1,x2,y2];
+    }
+
+    getbbox(){
+        return [-this.x, -this.y, -this.x + this.width, -this.y + this.height];
     }
 
     update(){ // 重新计算视窗的位置

@@ -114,8 +114,6 @@ controlCanvas.addEventListener('mousemove', (event) => {
 
     if (!isDragging) return;
 
-
-
     requestAnimationFrame(() => {
         throttle(drawMap(x, y));
     });
@@ -153,7 +151,7 @@ function drawZoom(zoomLevel){
     viewWindow.updateZ(zoomLevel);
     // update viewWindow
     renderer.update(zoomLevel, project, translate);
-    console.log(viewWindow.getbbox());
+    // console.log(viewWindow.getbbox());
 }
 
 function drawPointer(x, y, size = 10, type = "x"){

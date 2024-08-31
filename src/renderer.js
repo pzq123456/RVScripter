@@ -1,3 +1,5 @@
+import { Bounded3DArray, requestTile } from './tileUtils.js';
+
 export class Renderer {
     constructor(canvas, viewWindow) {
         this.canvas = canvas;
@@ -10,6 +12,8 @@ export class Renderer {
         this.screenCache = new Map();
         this.data = null;
         this.viewWindow = viewWindow;
+        this.stackSize = Math.ceil(this.width / 256) * Math.ceil(this.height / 256) + 10 // 瓦片堆栈的大小
+        this.tileStack = new Bounded3DArray(this.stackSize);
     }
 
     injectData(data) {
@@ -65,40 +69,61 @@ export class Renderer {
         this.ctx.stroke();
     }
 
-    // debug function
-    drawTileGrids(tileGrids){
-       // 根据 parts 分割画布 width height 为画布的宽高
-        const {width, height, parts} = tileGrids;
-        const partHeight = width / parts;
-        const partWidth = height / parts;
+    drawSquare([x, y], size = 256) {
+        let realX = x * size;
+        let realY = y * size;
+
+        // draw rect 
         this.ctx.beginPath();
-        for(let i = 0; i < parts; i++){
-            this.ctx.moveTo(i * partWidth, 0);
-            this.ctx.lineTo(i * partWidth, height);
-        }
-        for(let i = 0; i < parts; i++){
-            this.ctx.moveTo(0, i * partHeight);
-            this.ctx.lineTo(width, i * partHeight);
-        }
+        this.ctx.moveTo(realX, realY);
+        this.ctx.lineTo(realX + size, realY);
+        this.ctx.lineTo(realX + size, realY + size);
+        this.ctx.lineTo(realX, realY + size);
+        this.ctx.closePath();
         this.ctx.stroke();
 
-        // 绘制网格右边界
-        this.ctx.font = '30px serif';
-        for(let i = 0; i < parts; i++){
-            this.ctx.fillText(i, i * partWidth, height);
-        }
-        // 绘制网格下边界
-        for(let i = 0; i < parts; i++){
-            this.ctx.fillText(i, width, i * partHeight);
-        }
+        // draw text in the center of rect
+        this.ctx.fillText(`(${x},${y})`, realX + size / 2, realY + size / 2);
+    }
 
-        // 并在每个网格的中心绘制坐标
-        this.ctx.font = '30px serif';
-        for(let i = 0; i < parts; i++){
-            for(let j = 0; j < parts; j++){
-                const x = i * partWidth + partWidth / 2;
-                const y = j * partHeight + partHeight / 2;
-                this.ctx.fillText(`(${i},${j})`, x, y);
+    drawTile([x, y], img) {
+        let realX = x * 256;
+        let realY = y * 256;
+        img.width = 256;
+        img.height = 256;
+        this.ctx.drawImage(img, realX, realY);
+    }
+
+    // debug function
+    drawTileGrids(tileGrids){
+        const { widthParts, heightParts, startX, startY } = tileGrids;
+
+        // draw square
+        for(let i = startX; i < startX + widthParts; i++){
+            for(let j = startY; j < startY + heightParts; j++){
+                this.drawSquare([i, j]);
+            }
+        }
+    }
+
+    drawTiles(tileGrids){
+        const { widthParts, heightParts, startX, startY } = tileGrids;
+        // draw square
+        for(let i = startX; i < startX + widthParts; i++){
+            for(let j = startY; j < startY + heightParts; j++){
+                // 首先检查是否已经缓存了该瓦片
+                if(this.tileStack.has(this.viewWindow.zoom, i, j)){
+                    let img = this.tileStack.get(this.viewWindow.zoom, i, j);
+                    this.drawTile([i, j], img);
+                }else{
+                    requestTile(this.viewWindow.zoom, i, j).then((img) => {
+                        this.tileStack.push(this.viewWindow.zoom, i, j, img);
+                        this.drawTile([i, j], img);
+                    }).catch(e => {
+                        console.error(e);
+                    });
+                }
+                
             }
         }
     }
@@ -193,8 +218,13 @@ export class Renderer {
 
         // screenCoor = this.operate(screenCoor, translate); // Translate
         this.setTranslate(this.viewWindow.getXY());
+
+        this.drawTiles(this.viewWindow.getTileGrids());
+
         this.render(screenCoor);
+
         this.drawTileGrids(this.viewWindow.getTileGrids());
+
     }
 
     render(screenCoor) {
@@ -216,7 +246,7 @@ export class Renderer {
         this.setStrokeColor('purple', 2);
         this.drawMultiLines(screenCoor.multiLines);
 
-        this.setFillColor('yellow');
+        this.setFillColor('rgba(0, 255, 0, 0.3)');
         this.setStrokeColor('brown', 1);
         this.drawMultiPolygons(screenCoor.multiPolygons);
 
@@ -226,7 +256,7 @@ export class Renderer {
         // // this.drawBbox([x1, y1, x2, y2]);
         // // in the center of bbox text the viewCenter and zoomlevel
         this.setFillColor('green');
-        this.ctx.fillText(`Center: ${this.viewWindow.center}, Zoom: ${this.viewWindow.zoom}`,0, 40);
+        this.ctx.fillText(`Center: ${this.viewWindow.center}, Zoom: ${this.viewWindow.zoom},Offset: ${this.viewWindow.getXY()} `,this.viewWindow.x, this.viewWindow.y + 40);
 
     }
 }

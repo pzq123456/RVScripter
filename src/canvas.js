@@ -16,7 +16,7 @@ export class Canvas{
     constructor(
         parentElement = null,
         layerNames = ["game", "text", "control"],
-        width = 2048, 
+        width = 1024, 
         height = 1024, 
         zIndexFrom = 0 
     ){
@@ -83,7 +83,8 @@ export class Canvas{
             height: this.height + 'px',
             position: 'relative',
             zIndex: this.zIndexFrom,
-            backgroundColor: 'gray',
+            backgroundColor: 'white',
+            border: '1px solid black'
         }
 
         for(let key in style){

@@ -42,6 +42,7 @@ const textCtx = textCanvas.getContext('2d');
 let textArea = null;
 let pointer = null;
 let pointerType = "x";
+let revX,revY;
 
 function draw(x,y){
     if(!pointer){
@@ -64,7 +65,7 @@ function draw(x,y){
         textCtx.clearRect(textArea.x, textArea.y, textArea.width, textArea.height);
     }
 
-    let [revX,revY] = unproject(untranslate([x,y]));
+    [revX,revY] = unproject(untranslate([x,y]));
 
     textCtx.fillStyle = 'black';
     textCtx.font = '20px serif';
@@ -106,6 +107,12 @@ controlCanvas.addEventListener('mouseup', () => {
     pointerType = "x";
 });
 
+// mouse leave
+controlCanvas.addEventListener('mouseleave', () => {
+    isDragging = false;
+    pointerType = "x";
+});
+
 controlCanvas.addEventListener('mousemove', (event) => {
     const rect = controlCanvas.getBoundingClientRect();
     let x = event.clientX - rect.left;
@@ -117,7 +124,6 @@ controlCanvas.addEventListener('mousemove', (event) => {
     requestAnimationFrame(() => {
         throttle(drawMap(x, y));
     });
-
 });
 
 function drawMap(x, y) {
@@ -136,30 +142,33 @@ function drawMap(x, y) {
 
 // 添加滚轮事件
 controlCanvas.addEventListener('wheel', (event) => {
-    // let x = event.clientX - controlCanvas.getBoundingClientRect().left;
-    // let y = event.clientY - controlCanvas.getBoundingClientRect().top;
     // 鼠标滚轮控制 zoomLevel 在 0 - 20 个整数之间
     zoomLevel -= Math.sign(event.deltaY);
+    // clip zoomLevel in [0, 18]
+    zoomLevel = Math.min(18, Math.max(0, zoomLevel));
+    // viewWindow.setCenter([revY, revX]);
+
     drawZoom(zoomLevel)
 });
 
 function drawZoom(zoomLevel){
-    if(zoomLevel < 0){
-        zoomLevel = 0;
-    }else if(zoomLevel > 20){
-        zoomLevel = 20;
-    }
     viewWindow.updateZ(zoomLevel);
     renderer.update(zoomLevel, project, translate);
 }
 
 // 使用
 document.addEventListener('keydown', (event) => {
+
     if(event.key == "w"){
-        zoomLevel += 1;}
+        zoomLevel += 1;
+    }
     else if(event.key == "s"){
         zoomLevel -= 1;
     }
+    zoomLevel = Math.min(18, Math.max(0, zoomLevel));
+
+    viewWindow.setCenter([revY, revX]);
+
     drawZoom(zoomLevel);
 });
 

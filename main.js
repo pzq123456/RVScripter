@@ -1,27 +1,24 @@
 import { Canvas } from "./src/canvas.js";
-import { Renderer } from "./src/renderer.js";
+import { VectorRenderer, RasterRenderer } from "./src/renderer.js";
 
 import { processGeoJSONData } from "./src/geoJSON.js";
 import { ViewWindow } from "./src/viewWindow.js";
 
-import { requestTile } from "./src/tileUtils.js";
-
 const left = document.getElementById('left');
 
-const canvasGroup = new Canvas(left,["map","text","control"]);
+const canvasGroup = new Canvas(left,["raster","vector","text","control"]);
 
-const mapCanvas = canvasGroup.getLayer("map");
+const vectorCanvas = canvasGroup.getLayer("vector");
+const rasterCanvas = canvasGroup.getLayer("raster");
 
 
-let zoomLevel = 2;
+let zoomLevel = 5;
 
 let viewCenter = [116,36];
 
 let viewWindow = new ViewWindow(viewCenter, canvasGroup.width, canvasGroup.height, zoomLevel);
-const renderer = new Renderer(mapCanvas, viewWindow);
-
-renderer.setFillColor('rgba(255, 0, 0, 0.3)');
-renderer.setStrokeColor('green', 2);
+const renderer = new VectorRenderer(vectorCanvas, viewWindow);
+const rasterRenderer = new RasterRenderer(rasterCanvas, viewWindow);
 
 let project = viewWindow.project.bind(viewWindow);
 let unproject = viewWindow.unproject.bind(viewWindow);
@@ -30,7 +27,8 @@ let untranslate = viewWindow.untranslate.bind(viewWindow);
 
 processGeoJSONData('./data/data.json').then(parsedData => {
     renderer.injectData(parsedData);
-    renderer.update(zoomLevel, project, translate);
+    renderer.update();
+    rasterRenderer.update();
 });
 
 const controlCanvas = canvasGroup.ControlLayer;
@@ -132,7 +130,8 @@ function drawMap(x, y) {
         let dx = x - lastX;
         let dy = y - lastY;
         viewWindow.updateXY(-dx, -dy);
-        renderer.update(zoomLevel, project, translate);
+        renderer.update();
+        rasterRenderer.update();
         lastX = x;
         lastY = y;
     }
@@ -144,16 +143,17 @@ function drawMap(x, y) {
 controlCanvas.addEventListener('wheel', (event) => {
     // 鼠标滚轮控制 zoomLevel 在 0 - 20 个整数之间
     zoomLevel -= Math.sign(event.deltaY);
-    // clip zoomLevel in [0, 18]
     zoomLevel = Math.min(18, Math.max(0, zoomLevel));
     // viewWindow.setCenter([revY, revX]);
-
-    drawZoom(zoomLevel)
+    requestAnimationFrame(() => {
+        throttle(drawZoom(zoomLevel));
+    });
 });
 
 function drawZoom(zoomLevel){
     viewWindow.updateZ(zoomLevel);
-    renderer.update(zoomLevel, project, translate);
+    renderer.update();
+    rasterRenderer.update();
 }
 
 // 使用
@@ -204,30 +204,4 @@ function drawPointerX(x, y, size = 10){
     controlctx.lineTo(x - size, y + size);
     controlctx.strokeStyle = 'green';
     controlctx.stroke();
-}
-
-// request tile and then add it to body
-let tileList = [
-    [0,0,0],
-    [1,0,0],
-    [1,1,0],
-    [1,0,1],
-    [1,1,1],
-];
-
-// tileList.forEach(([z, x, y]) => {
-//     addTile(z, x, y);
-// });
-
-function addTile(z = 0, x = 0, y = 0){
-    requestTile(z, x, y).then((img) => {
-        img.width = 256;
-        img.height = 256;
-        left.appendChild(img);
-        // draw img in canvas
-        // mapCanvas.getContext('2d').drawImage(img, 0, 0,img.width, img.height, x * img.width, y * img.height, img.width, img.height);
-
-    }).catch(e => {
-        console.log(e);
-    });
 }

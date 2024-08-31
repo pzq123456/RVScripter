@@ -1,36 +1,63 @@
 import { Bounded3DArray, requestTile } from './tileUtils.js';
 
-export class Renderer {
+class Renderer{ // 渲染器 基类
     constructor(canvas, viewWindow) {
         this.canvas = canvas;
         this.ctx = canvas.getContext('2d');
         this.width = canvas.width;
         this.height = canvas.height;
-        this.currentFillColor = null;
-        this.currentStrokeColor = null;
-        this.currentLineWidth = null;
-        this.screenCache = new Map();
-        this.data = null;
         this.viewWindow = viewWindow;
-        this.stackSize = Math.ceil(this.width / 256) * Math.ceil(this.height / 256) + 10 // 瓦片堆栈的大小
-        this.tileStack = new Bounded3DArray(this.stackSize);
-    }
-
-    injectData(data) {
-        this.data = data;
-        this.ctx.font = '40px serif';
     }
 
     clearCanvas(x = 0, y = 0) {
         this.ctx.clearRect(x, y, this.width, this.height);
     }
 
-    setTranslate([x, y]) {
+    setTranslate([x, y]) { // 设置平移
         this.ctx.restore();
         this.ctx.save();
         this.ctx.translate(-x, -y);
         this.clearCanvas(x,y);
     }
+
+    update() {
+        this.setTranslate(this.viewWindow.getXY());
+        this.render();
+    }
+
+    render() {
+        // 渲染函数
+        console.log("Rendering...");
+    }
+}
+
+export class VectorRenderer extends Renderer{ // 矢量渲染器
+    constructor(canvas, viewWindow) {
+        super(canvas, viewWindow);
+        this.screenCache = new Map(); // 屏幕坐标缓存
+        this.data = null;
+        this.maxCacheSize = 5; // 缓存的最大大小 基于最近最少使用（LRU）的缓存策略
+    }
+
+    injectData(data) {
+        this.data = data;
+    }
+
+    // updateData(newData) {
+    //     // 遍历 newData，更新各个分类中的数据
+    //     for (const [key, items] of Object.entries(newData)) {
+    //         if (this.data[key]) {
+    //             // 避免重复数据的添加或处理
+    //             const existingDataSet = new Set(this.data[key].map(JSON.stringify));
+    //             const uniqueItems = items.filter(item => !existingDataSet.has(JSON.stringify(item)));
+                
+    //             // 批量添加新数据
+    //             this.data[key].push(...uniqueItems);
+    //         } else {
+    //             console.warn(`Unrecognized data category: ${key}`);
+    //         }
+    //     }
+    // }
 
     setFillColor(color) {
         if (this.currentFillColor !== color) {
@@ -46,6 +73,11 @@ export class Renderer {
             this.currentStrokeColor = color;
             this.currentLineWidth = width;
         }
+    }
+
+    setTextStyle(font = '40px serif', color = 'black') {
+        this.ctx.font = font;
+        this.ctx.fillStyle = color;
     }
 
     drawPoints(points, radius = 5) {
@@ -86,14 +118,6 @@ export class Renderer {
         this.ctx.fillText(`(${x},${y})`, realX + size / 2, realY + size / 2);
     }
 
-    drawTile([x, y], img) {
-        let realX = x * 256;
-        let realY = y * 256;
-        img.width = 256;
-        img.height = 256;
-        this.ctx.drawImage(img, realX, realY);
-    }
-
     // debug function
     drawTileGrids(tileGrids){
         const { widthParts, heightParts, startX, startY } = tileGrids;
@@ -102,28 +126,6 @@ export class Renderer {
         for(let i = startX; i < startX + widthParts; i++){
             for(let j = startY; j < startY + heightParts; j++){
                 this.drawSquare([i, j]);
-            }
-        }
-    }
-
-    drawTiles(tileGrids){
-        const { widthParts, heightParts, startX, startY } = tileGrids;
-        // draw square
-        for(let i = startX; i < startX + widthParts; i++){
-            for(let j = startY; j < startY + heightParts; j++){
-                // 首先检查是否已经缓存了该瓦片
-                if(this.tileStack.has(this.viewWindow.zoom, i, j)){
-                    let img = this.tileStack.get(this.viewWindow.zoom, i, j);
-                    this.drawTile([i, j], img);
-                }else{
-                    requestTile(this.viewWindow.zoom, i, j).then((img) => {
-                        this.tileStack.push(this.viewWindow.zoom, i, j, img);
-                        this.drawTile([i, j], img);
-                    }).catch(e => {
-                        console.error(e);
-                    });
-                }
-                
             }
         }
     }
@@ -182,7 +184,7 @@ export class Renderer {
         this.ctx.stroke();
     }
 
-    operate(parsedData, projection) {
+    operate(parsedData, fn) {
         // 将地理坐标转换为屏幕坐标
         let screenCoor = {
             points: [],
@@ -200,7 +202,7 @@ export class Renderer {
                 if (!coordinates.length) {
                     return;
                 }
-                const screenCoords = applyOperationInNestedArray(coordinates, projection);
+                const screenCoords = applyOperationInNestedArray(coordinates, fn);
                 screenCoor[key].push({coordinates: screenCoords});
             });
         });
@@ -208,7 +210,10 @@ export class Renderer {
         return screenCoor;
     }
 
-    update(zoomLevel, projct, translate) {
+    update() {
+        let zoomLevel = this.viewWindow.zoom;
+        let projct = this.viewWindow.project.bind(this.viewWindow);
+
         let screenCoor = this.screenCache.get(zoomLevel); // cache
 
         if (!screenCoor) {
@@ -216,19 +221,23 @@ export class Renderer {
             this.screenCache.set(zoomLevel, screenCoor);
         }
 
-        // screenCoor = this.operate(screenCoor, translate); // Translate
         this.setTranslate(this.viewWindow.getXY());
-
-        this.drawTiles(this.viewWindow.getTileGrids());
-
         this.render(screenCoor);
+        // console.log(this.screenCache.size);
+        this.ensureCacheSize();
+    }
 
-        this.drawTileGrids(this.viewWindow.getTileGrids());
-
+    // 保持缓存大小不超过最大值
+    ensureCacheSize() {
+        while (this.screenCache.size > this.maxCacheSize) {
+            // 删除最早插入的项
+            const oldestKey = this.screenCache.keys().next().value;
+            this.screenCache.delete(oldestKey);
+        }
     }
 
     render(screenCoor) {
-        // this.clearCanvas();
+
         // 绘制
         this.setFillColor('red');
         this.drawPoints(screenCoor.points);
@@ -250,13 +259,53 @@ export class Renderer {
         this.setStrokeColor('brown', 1);
         this.drawMultiPolygons(screenCoor.multiPolygons);
 
-        // 绘制视窗
-        // const [x1, y1, x2, y2] = this.viewWindow.getbbox();
-        // // this.setStrokeColor('black', 2);
-        // // this.drawBbox([x1, y1, x2, y2]);
-        // // in the center of bbox text the viewCenter and zoomlevel
         this.setFillColor('green');
+        this.setTextStyle();
         this.ctx.fillText(`Center: ${this.viewWindow.center}, Zoom: ${this.viewWindow.zoom},Offset: ${this.viewWindow.getXY()} `,this.viewWindow.x, this.viewWindow.y + 40);
 
+        // this.drawTileGrids(this.viewWindow.getTileGrids()); // debug
+    }
+
+}
+
+export class RasterRenderer extends Renderer{ // 栅格渲染器
+    constructor(canvas, viewWindow) {
+        super(canvas, viewWindow);
+        this.stackSize = Math.min(Math.pow(2, this.viewWindow.maxZoomLevel) * 2, 256);
+        this.tileStack = new Bounded3DArray(this.stackSize);
+    }
+
+    drawTile([x, y], img) {
+        let realX = x * 256;
+        let realY = y * 256;
+        img.width = 256;
+        img.height = 256;
+        this.ctx.drawImage(img, realX, realY);
+    }
+
+    drawTiles(tileGrids){
+        const { widthParts, heightParts, startX, startY } = tileGrids;
+        // draw square
+        for(let i = startX; i < startX + widthParts; i++){
+            for(let j = startY; j < startY + heightParts; j++){
+                // 首先检查是否已经缓存了该瓦片
+                if(this.tileStack.has(this.viewWindow.zoom, i, j)){
+                    let img = this.tileStack.get(this.viewWindow.zoom, i, j);
+                    this.drawTile([i, j], img);
+                }else{
+                    requestTile(this.viewWindow.zoom, i, j).then((img) => {
+                        this.tileStack.push(this.viewWindow.zoom, i, j, img);
+                        this.drawTile([i, j], img);
+                    }).catch(e => {
+                        console.error(e);
+                    });
+                }
+                
+            }
+        }
+    }
+
+    render() {
+        this.drawTiles(this.viewWindow.getTileGrids());
     }
 }

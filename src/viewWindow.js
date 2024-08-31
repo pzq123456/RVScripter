@@ -15,26 +15,54 @@ export class ViewWindow{
         return [this.x, this.y];
     }
 
-    getTileGrids(){
-        const size = 256 * Math.pow(2, this.zoom);
+    getTileGrids() {
+        const TILE_SIZE = 256;
+        const mapSize = TILE_SIZE * Math.pow(2, this.zoom);
 
-        let interRect = getBboxIntersection([0, 0, size, size], this.getbbox());
+        // 获取视窗和地图的交集
+        const interRect = this.getBboxIntersection([0, 0, mapSize, mapSize], this.getbbox());
 
-        // let validWidth = Math.ceil(Math.min(this.width + this.x, size) / 256);
-        // let validHeight = Math.ceil(Math.min(this.height + this.y, size) / 256);
-
-        let validWidth = Math.ceil((interRect[2] - interRect[0]) / 256);
-        let validHeight = Math.ceil((interRect[3] - interRect[1]) / 256);
-
-        let startX = Math.floor(interRect[0] / 256);
-        let startY = Math.floor(interRect[1] / 256);
-
-        return {
-            widthParts: validWidth, // 应当绘制的瓦片在横向上的个数
-            heightParts: validHeight, // 应当绘制的瓦片在纵向上的个数
-            startX: startX, // 起始瓦片的横向编码
-            startY: startY, // 起始瓦片的纵向编码
+        // 如果没有交集，返回空结果
+        if (!interRect) {
+            return { widthParts: 0, heightParts: 0, startX: 0, startY: 0 };
         }
+
+        // 计算起始瓦片的位置（向下取整）
+        const startX = Math.floor(interRect[0] / TILE_SIZE);
+        const startY = Math.floor(interRect[1] / TILE_SIZE);
+
+        // 计算结束瓦片的位置（向上取整）
+        const endX = Math.ceil(interRect[2] / TILE_SIZE);
+        const endY = Math.ceil(interRect[3] / TILE_SIZE);
+
+        // 计算需要绘制的瓦片数量
+        const validWidth = endX - startX;
+        const validHeight = endY - startY;
+
+        // 确保至少有一个瓦片
+        return {
+            widthParts: Math.max(1, validWidth),  // 应当绘制的瓦片在横向上的个数
+            heightParts: Math.max(1, validHeight), // 应当绘制的瓦片在纵向上的个数
+            startX: startX,           // 起始瓦片的横向编码
+            startY: startY            // 起始瓦片的纵向编码
+        };
+    }
+
+
+    getBboxIntersection(bbox1, bbox2) {
+        const [x1, y1, x2, y2] = bbox1;
+        const [x3, y3, x4, y4] = bbox2;
+
+        const xLeft = Math.max(x1, x3);
+        const yTop = Math.max(y1, y3);
+        const xRight = Math.min(x2, x4);
+        const yBottom = Math.min(y2, y4);
+
+        if (xLeft < xRight && yTop < yBottom) {
+            return [xLeft, yTop, xRight, yBottom];
+        }
+
+        return null; // 没有交集
     }
 
     getGeobbox(){
@@ -91,20 +119,20 @@ export class ViewWindow{
     }
 }
 
-function getBboxIntersection(rect1, rect2) {
-    const [x1, y1, x2, y2] = rect1;
-    const [x3, y3, x4, y4] = rect2;
+// function getBboxIntersection(rect1, rect2) {
+//     const [x1, y1, x2, y2] = rect1;
+//     const [x3, y3, x4, y4] = rect2;
     
-    // Calculate the coordinates of the intersection rectangle
-    const inter_x1 = Math.max(x1, x3);
-    const inter_y1 = Math.max(y1, y3);
-    const inter_x2 = Math.min(x2, x4);
-    const inter_y2 = Math.min(y2, y4);
+//     // Calculate the coordinates of the intersection rectangle
+//     const inter_x1 = Math.max(x1, x3);
+//     const inter_y1 = Math.max(y1, y3);
+//     const inter_x2 = Math.min(x2, x4);
+//     const inter_y2 = Math.min(y2, y4);
     
-    // Check if the intersection is valid
-    if (inter_x1 < inter_x2 && inter_y1 < inter_y2) {
-        return [inter_x1, inter_y1, inter_x2, inter_y2];
-    } else {
-        return [0, 0, 0, 0];
-    }
-}
+//     // Check if the intersection is valid
+//     if (inter_x1 < inter_x2 && inter_y1 < inter_y2) {
+//         return [inter_x1, inter_y1, inter_x2, inter_y2];
+//     } else {
+//         return [0, 0, 0, 0];
+//     }
+// }

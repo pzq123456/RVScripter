@@ -1,4 +1,4 @@
-import { LatLongToPixelXY, PixelXYToLatLong, GroundResolutionInDegrees, ClipbyBoundaries} from "./projection.js";
+import { LatLongToPixelXY, PixelXYToLatLong, GroundResolutionInDegrees, ClipbyBoundaries, setTileSize, MapScale, MapSize} from "./projection.js";
 
 export class ViewWindow{
     constructor(viewCenter, width = 1024, height = 1024, zoomLevel){
@@ -7,17 +7,28 @@ export class ViewWindow{
         this.zoom = zoomLevel;
         this.center = viewCenter; // [longitude, latitute] [经度，纬度]
 
+        this.TILE_SIZE = 256;
+        setTileSize(this.TILE_SIZE);
+
         this.update();
-        this.maxZoomLevel = 18;
+        this.maxZoomLevel = 19;
+    }
+
+    getMapScale(){
+        return MapScale(this.center[0], this.zoom, 96);
     }
 
     getXY(){
         return [this.x, this.y];
     }
 
-    getTileGrids() {
-        const TILE_SIZE = 256;
-        const mapSize = TILE_SIZE * Math.pow(2, this.zoom);
+    getTileGrids(zoom) {
+
+        if(!zoom){
+            zoom = this.zoom;
+        }
+
+        const mapSize = MapSize(zoom); // 获取地图的大小
 
         // 获取视窗和地图的交集
         const interRect = this.getBboxIntersection([0, 0, mapSize, mapSize], this.getbbox());
@@ -28,12 +39,12 @@ export class ViewWindow{
         }
 
         // 计算起始瓦片的位置（向下取整）
-        const startX = Math.floor(interRect[0] / TILE_SIZE);
-        const startY = Math.floor(interRect[1] / TILE_SIZE);
+        const startX = Math.floor(interRect[0] / this.TILE_SIZE);
+        const startY = Math.floor(interRect[1] / this.TILE_SIZE);
 
         // 计算结束瓦片的位置（向上取整）
-        const endX = Math.ceil(interRect[2] / TILE_SIZE);
-        const endY = Math.ceil(interRect[3] / TILE_SIZE);
+        const endX = Math.ceil(interRect[2] / this.TILE_SIZE);
+        const endY = Math.ceil(interRect[3] / this.TILE_SIZE);
 
         // 计算需要绘制的瓦片数量
         const validWidth = endX - startX;

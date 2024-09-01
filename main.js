@@ -12,7 +12,7 @@ const vectorCanvas = canvasGroup.getLayer("vector");
 const rasterCanvas = canvasGroup.getLayer("raster");
 
 
-let zoomLevel = 5;
+let zoomLevel = 1;
 
 let viewCenter = [116,36];
 
@@ -20,12 +20,12 @@ let viewWindow = new ViewWindow(viewCenter, canvasGroup.width, canvasGroup.heigh
 const renderer = new VectorRenderer(vectorCanvas, viewWindow);
 const rasterRenderer = new RasterRenderer(rasterCanvas, viewWindow);
 
-let project = viewWindow.project.bind(viewWindow);
+// let project = viewWindow.project.bind(viewWindow);
 let unproject = viewWindow.unproject.bind(viewWindow);
-let translate = viewWindow.translate.bind(viewWindow);
+// let translate = viewWindow.translate.bind(viewWindow);
 let untranslate = viewWindow.untranslate.bind(viewWindow);
 
-processGeoJSONData('./data/data.json').then(parsedData => {
+processGeoJSONData('./data/china.json').then(parsedData => {
     renderer.injectData(parsedData);
     renderer.update();
     rasterRenderer.update();
@@ -105,6 +105,11 @@ controlCanvas.addEventListener('mouseup', () => {
     pointerType = "x";
 });
 
+// dbclic
+controlCanvas.addEventListener('dblclick', (event) => {
+    copyToClipboard(`(${revX},${revY})`);
+});
+
 // mouse leave
 controlCanvas.addEventListener('mouseleave', () => {
     isDragging = false;
@@ -143,8 +148,9 @@ function drawMap(x, y) {
 controlCanvas.addEventListener('wheel', (event) => {
     // 鼠标滚轮控制 zoomLevel 在 0 - 20 个整数之间
     zoomLevel -= Math.sign(event.deltaY);
-    zoomLevel = Math.min(18, Math.max(0, zoomLevel));
-    // viewWindow.setCenter([revY, revX]);
+    
+    zoomLevel = Math.min(viewWindow.maxZoomLevel, Math.max(0, zoomLevel));
+    viewWindow.setCenter([revY, revX]);
     requestAnimationFrame(() => {
         throttle(drawZoom(zoomLevel));
     });
@@ -165,7 +171,7 @@ document.addEventListener('keydown', (event) => {
     else if(event.key == "s"){
         zoomLevel -= 1;
     }
-    zoomLevel = Math.min(18, Math.max(0, zoomLevel));
+    zoomLevel = Math.min(viewWindow.maxZoomLevel, Math.max(0, zoomLevel));
 
     viewWindow.setCenter([revY, revX]);
 
@@ -204,4 +210,12 @@ function drawPointerX(x, y, size = 10){
     controlctx.lineTo(x - size, y + size);
     controlctx.strokeStyle = 'green';
     controlctx.stroke();
+}
+
+// function 
+// 工具函数 将某个内容写入粘贴板
+function copyToClipboard(str) {
+    navigator.clipboard.writeText(str).then(function() {
+        console.log('Async: Copying to clipboard was successful!');
+    });
 }

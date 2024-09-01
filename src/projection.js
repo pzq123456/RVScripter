@@ -8,6 +8,25 @@ const MaxLatitude = 85.05112878;
 const MinLongitude = -180;
 const MaxLongitude = 180;
 
+let TILE_SIZE = 512;
+
+/**
+ * 设置瓦片大小
+ * @param {number} newSize - 新的瓦片大小
+ */
+export function setTileSize(newSize) {
+    TILE_SIZE = newSize;
+}
+
+/**
+ * 获取当前瓦片大小
+ * @returns {number} 当前瓦片大小
+ */
+export function getTileSize() {
+    return TILE_SIZE;
+}
+
+
 export function ClipbyBoundaries([latitude, longitude], bound = [MinLatitude, MaxLatitude, MinLongitude, MaxLongitude]) {
     return [Clip(latitude, bound[0], bound[1]), Clip(longitude, bound[2], bound[3])];
 }
@@ -23,7 +42,7 @@ function Clip(n, minValue, maxValue) {
  * Determines the map width and height (in pixels) at a specified level of detail.
  */
 export function MapSize(levelOfDetail) {
-    return 256 << levelOfDetail;
+    return TILE_SIZE << levelOfDetail;
 }
 
 /**
@@ -56,7 +75,7 @@ export function GroundResolutionInDegrees(latitude, levelOfDetail) {
  * @param {number} screenDpi Resolution of the screen, in dots per inch.
  * @returns The map scale, expressed as the denominator N of the ratio 1 : N.
  */
-function MapScale(latitude, levelOfDetail, screenDpi) {
+export function MapScale(latitude, levelOfDetail, screenDpi) {
     return GroundResolution(latitude, levelOfDetail) * screenDpi / 0.0254;
 }
 
@@ -104,11 +123,11 @@ export function PixelXYToLatLong(pixelX, pixelY, levelOfDetail) {
 * Converts pixel XY coordinates into tile XY coordinates of the tile containing the specified pixel.
 */
 function PixelXYToTileXY(pixelX, pixelY) {
-    return [pixelX / 256, pixelY / 256];
+    return [pixelX / TILE_SIZE, pixelY / TILE_SIZE];
 }
 
 function TileXYToPixelXY(tileX, tileY) {
-    return [tileX * 256, tileY * 256];
+    return [tileX * TILE_SIZE, tileY * TILE_SIZE];
 }
 
 /**

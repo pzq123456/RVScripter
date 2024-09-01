@@ -7,6 +7,7 @@ class Renderer{ // 渲染器 基类
         this.width = canvas.width;
         this.height = canvas.height;
         this.viewWindow = viewWindow;
+        this.TILE_SIZE = viewWindow.TILE_SIZE;
     }
 
     clearCanvas(x = 0, y = 0) {
@@ -245,7 +246,7 @@ export class VectorRenderer extends Renderer{ // 矢量渲染器
         this.setStrokeColor('blue', 2);
         this.drawLines(screenCoor.lines);
 
-        this.setFillColor('green');
+        this.setFillColor('rgba(255, 0, 0, 0.3)');
         this.setStrokeColor('black', 1);
         this.drawPolygons(screenCoor.polygons);
 
@@ -261,9 +262,9 @@ export class VectorRenderer extends Renderer{ // 矢量渲染器
 
         this.setFillColor('green');
         this.setTextStyle();
-        this.ctx.fillText(`Center: ${this.viewWindow.center}, Zoom: ${this.viewWindow.zoom},Offset: ${this.viewWindow.getXY()} `,this.viewWindow.x, this.viewWindow.y + 40);
+        this.ctx.fillText(`Center: ${this.viewWindow.center}, Zoom: ${this.viewWindow.zoom},Scale: 1:${this.viewWindow.getMapScale()} `,this.viewWindow.x, this.viewWindow.y + 40);
 
-        // this.drawTileGrids(this.viewWindow.getTileGrids()); // debug
+        // this.drawTileGrids(this.viewWindow.getTileGrids(this.viewWindow.zoom)); // debug
     }
 
 }
@@ -273,35 +274,79 @@ export class RasterRenderer extends Renderer{ // 栅格渲染器
         super(canvas, viewWindow);
         this.stackSize = Math.min(Math.pow(2, this.viewWindow.maxZoomLevel) * 2, 256);
         this.tileStack = new Bounded3DArray(this.stackSize);
+
+        this.maxConcurrentRequests = 4; // 最大并发请求数
+        this.retryDelay = 1000; // 重试延迟（毫秒）
+        this.maxRetries = 3; // 最大重试次数
     }
 
     drawTile([x, y], img) {
-        let realX = x * 256;
-        let realY = y * 256;
-        img.width = 256;
-        img.height = 256;
-        this.ctx.drawImage(img, realX, realY);
+        this.ctx.drawImage(img, (x) * this.TILE_SIZE, (y) * this.TILE_SIZE, this.TILE_SIZE, this.TILE_SIZE);
     }
 
-    drawTiles(tileGrids){
+    async drawTiles(tileGrids) {
         const { widthParts, heightParts, startX, startY } = tileGrids;
-        // draw square
-        for(let i = startX; i < startX + widthParts; i++){
-            for(let j = startY; j < startY + heightParts; j++){
-                // 首先检查是否已经缓存了该瓦片
-                if(this.tileStack.has(this.viewWindow.zoom, i, j)){
-                    let img = this.tileStack.get(this.viewWindow.zoom, i, j);
-                    this.drawTile([i, j], img);
-                }else{
-                    requestTile(this.viewWindow.zoom, i, j).then((img) => {
-                        this.tileStack.push(this.viewWindow.zoom, i, j, img);
-                        this.drawTile([i, j], img);
-                    }).catch(e => {
-                        console.error(e);
-                    });
-                }
-                
+        const centerX = startX + Math.floor(widthParts / 2);
+        const centerY = startY + Math.floor(heightParts / 2);
+
+        // 根据到中心的距离对瓦片进行排序
+        const sortedTiles = this.sortTilesByPriority(startX, startY, widthParts, heightParts, centerX, centerY);
+
+        // 批量处理瓦片
+        const batchSize = 16; // 每批处理的瓦片数
+        for (let i = 0; i < sortedTiles.length; i += batchSize) {
+            const batch = sortedTiles.slice(i, i + batchSize);
+            await this.processTileBatch(batch);
+        }
+    }
+
+    sortTilesByPriority(startX, startY, widthParts, heightParts, centerX, centerY) {
+        const tiles = [];
+        for (let i = startX; i < startX + widthParts; i++) {
+            for (let j = startY; j < startY + heightParts; j++) {
+                const distance = Math.sqrt(Math.pow(i - centerX, 2) + Math.pow(j - centerY, 2));
+                tiles.push({ x: i, y: j, distance });
             }
+        }
+        return tiles.sort((a, b) => a.distance - b.distance);
+    }
+
+    async processTileBatch(batch) {
+        const promises = batch.map(tile => this.processTile(tile.x, tile.y));
+        await Promise.all(promises);
+    }
+
+    async processTile(x, y) {
+        if (this.tileStack.has(this.viewWindow.zoom, x, y)) {
+            const img = this.tileStack.get(this.viewWindow.zoom, x, y);
+            this.drawTile([x, y], img);
+        } else {
+            await this.requestAndDrawTile(x, y);
+        }
+    }
+
+    async requestAndDrawTile(x, y, retries = 0) {
+        try {
+            const img = await this.requestTileWithRetry(this.viewWindow.zoom, x, y);
+            this.tileStack.push(this.viewWindow.zoom, x, y, img);
+            this.drawTile([x, y], img);
+        } catch (error) {
+            console.error(`Failed to load tile at zoom ${this.viewWindow.zoom}, x: ${x}, y: ${y}`, error);
+            if (retries < this.maxRetries) {
+                setTimeout(() => this.requestAndDrawTile(x, y, retries + 1), this.retryDelay);
+            }
+        }
+    }
+
+    async requestTileWithRetry(zoom, x, y, retries = 0) {
+        try {
+            return await requestTile(zoom, x, y);
+        } catch (error) {
+            if (retries < this.maxRetries) {
+                await new Promise(resolve => setTimeout(resolve, this.retryDelay));
+                return this.requestTileWithRetry(zoom, x, y, retries + 1);
+            }
+            throw error;
         }
     }
 

@@ -12,7 +12,7 @@ const vectorCanvas = canvasGroup.getLayer("vector");
 const rasterCanvas = canvasGroup.getLayer("raster");
 
 
-let zoomLevel = 1;
+let zoomLevel = 5;
 
 let viewCenter = [116,36];
 

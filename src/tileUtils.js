@@ -30,12 +30,26 @@ export class Bounded3DArray {
         this.priorityLevels = new Map(); // 用于存储每个缩放级别的优先级
     }
 
+    // 默认 zoom 越小，优先级越高
+    // 设置计算优先级地图的函数
+    priorityFunction(zoom) {
+        if (zoom < 3) {
+            return 2;
+        } else{
+            return 1;
+        }
+    }
+
     // 设置缩放级别的优先级
     setPriorityForZoom(zoom, priority) {
         this.priorityLevels.set(zoom, priority);
     }
 
     push(z, x, y, value) {
+        // 优先级计算
+
+        // this.setPriorityForZoom(z, this.priorityFunction(z));
+
         const key = `${z},${x},${y}`;
         if (!this.map.has(key)) {
             if (this.queue.length >= this.size) {
@@ -44,6 +58,12 @@ export class Bounded3DArray {
             this.queue.push(key);
         }
         this.map.set(key, { value, priority: this.priorityLevels.get(z) || 0 });
+        // // 优先级排序
+        // this.queue.sort((a, b) => this.map.get(a).priority - this.map.get(b).priority);
+        // 释放内存
+        while (this.queue.length > this.size) {
+            this.removeLowestPriority();
+        }
     }
 
     // 批量插入方法

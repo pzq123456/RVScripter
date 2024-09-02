@@ -300,6 +300,29 @@ export class RasterRenderer extends Renderer{ // 栅格渲染器
         }
     }
 
+    // drawTiles(tileGrids){
+    //     const { widthParts, heightParts, startX, startY } = tileGrids;
+    //     // draw square
+    //     for(let i = startX; i < startX + widthParts; i++){
+    //         for(let j = startY; j < startY + heightParts; j++){
+    //             // 首先检查是否已经缓存了该瓦片
+    //             if(this.tileStack.has(this.viewWindow.zoom, i, j)){
+    //                 let img = this.tileStack.get(this.viewWindow.zoom, i, j);
+    //                 this.drawTile([i, j], img);
+    //             }else{
+    //                 requestTile(this.viewWindow.zoom, i, j).then((img) => {
+    //                     this.tileStack.push(this.viewWindow.zoom, i, j, img);
+    //                     this.drawTile([i, j], img);
+    //                 }).catch(e => {
+    //                     console.error(e);
+    //                 });
+    //             }
+
+    //         }
+    //     }
+    // }
+
+
     sortTilesByPriority(startX, startY, widthParts, heightParts, centerX, centerY) {
         const tiles = [];
         for (let i = startX; i < startX + widthParts; i++) {

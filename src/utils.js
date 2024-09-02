@@ -110,3 +110,39 @@ function throttle(fn, delay = 100) {
     };
 }
 
+// 简单的防抖函数实现
+function debounce(func, delay) {
+    let timeout;
+    return function(...args) {
+        clearTimeout(timeout);
+        timeout = setTimeout(() => func.apply(this, args), delay);
+    };
+}
+
+function throttleAndDebounce(func, throttleLimit, debounceDelay) {
+    let throttleTimeout;
+    let debounceTimeout;
+    let lastRan;
+
+    return function(...args) {
+        const context = this;
+
+        if (!lastRan) {
+            func.apply(context, args);
+            lastRan = Date.now();
+        } else {
+            clearTimeout(debounceTimeout);
+            debounceTimeout = setTimeout(() => {
+                func.apply(context, args);
+            }, debounceDelay);
+
+            if (!throttleTimeout) {
+                throttleTimeout = setTimeout(() => {
+                    func.apply(context, args);
+                    lastRan = Date.now();
+                    throttleTimeout = null;
+                }, throttleLimit);
+            }
+        }
+    };
+}

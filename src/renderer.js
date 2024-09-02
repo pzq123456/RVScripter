@@ -277,7 +277,7 @@ export class RasterRenderer extends Renderer{ // 栅格渲染器
 
         this.maxConcurrentRequests = 4; // 最大并发请求数
         this.retryDelay = 1000; // 重试延迟（毫秒）
-        this.maxRetries = 3; // 最大重试次数
+        this.maxRetries = 2; // 最大重试次数
     }
 
     drawTile([x, y], img) {

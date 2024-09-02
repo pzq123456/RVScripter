@@ -145,19 +145,18 @@ function drawMap(x, y) {
 
 
 // 添加滚轮事件
-controlCanvas.addEventListener('wheel', (event) => {
-    // 鼠标滚轮控制 zoomLevel 在 0 - 20 个整数之间
+controlCanvas.addEventListener('wheel', throttle((event) => {
+    // 调整 zoomLevel 在 0 - 20 个整数之间
     zoomLevel -= Math.sign(event.deltaY);
-    
     zoomLevel = Math.min(viewWindow.maxZoomLevel, Math.max(0, zoomLevel));
     viewWindow.setCenter([revY, revX]);
-    requestAnimationFrame(() => {
-        throttle(drawZoom(zoomLevel));
-    });
-});
+    drawZoom(event);
+}, 600));
 
-function drawZoom(zoomLevel){
+function drawZoom(event) {
+
     viewWindow.updateZ(zoomLevel);
+    // renderer.canvas.style.transition = 'transform 0.5s ease';
     renderer.update();
     rasterRenderer.update();
 }
@@ -219,3 +218,4 @@ function copyToClipboard(str) {
         console.log('Async: Copying to clipboard was successful!');
     });
 }
+

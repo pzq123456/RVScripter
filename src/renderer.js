@@ -8,6 +8,8 @@ class Renderer{ // 渲染器 基类
         this.height = canvas.height;
         this.viewWindow = viewWindow;
         this.TILE_SIZE = viewWindow.TILE_SIZE;
+
+        this.previousZoomLevel = viewWindow.zoom;
     }
 
     clearCanvas(x = 0, y = 0) {
@@ -19,6 +21,24 @@ class Renderer{ // 渲染器 基类
         this.ctx.save();
         this.ctx.translate(-x, -y);
         this.clearCanvas(x,y);
+    }
+
+    setScale(zoomLevel) {
+        // 计算 delta
+        const delta = zoomLevel - this.previousZoomLevel;
+        
+        // 计算新的缩放比例
+        const scale = Math.pow(2, delta);
+
+        // 更新画布的缩放比例
+        this.ctx.restore(); // 恢复之前的状态
+        this.ctx.save(); // 保存当前状态
+        this.ctx.transform(scale, 0, 0, scale, 0, 0); // 缩放画布
+
+        // 更新 previousZoomLevel
+        this.previousZoomLevel = zoomLevel;
+
+        console.log(`Zoom level: ${zoomLevel}, Scale: ${scale}`);
     }
 
     update() {
@@ -323,17 +343,43 @@ export class RasterRenderer extends Renderer{ // 栅格渲染器
     // }
 
 
+    // sortTilesByPriority(startX, startY, widthParts, heightParts, centerX, centerY) {
+    //     const tiles = [];
+    //     for (let i = startX; i < startX + widthParts; i++) {
+    //         for (let j = startY; j < startY + heightParts; j++) {
+    //             const distance = Math.sqrt(Math.pow(i - centerX, 2) + Math.pow(j - centerY, 2));
+    //             tiles.push({ x: i, y: j, distance });
+    //         }
+    //     }
+    //     return tiles.sort((a, b) => a.distance - b.distance);
+    // }
+
+    // sortTilesByPriority(startX, startY, widthParts, heightParts, centerX, centerY) {
+    //     const tiles = [];
+    //     for (let i = startX; i < startX + widthParts; i++) {
+    //         for (let j = startY; j < startY + heightParts; j++) {
+    //             // 使用曼哈顿距离来实现矩形窗口扩展效果
+    //             const distance = Math.abs(i - centerX) + Math.abs(j - centerY);
+    //             tiles.push({ x: i, y: j, distance });
+    //         }
+    //     }
+    //     // 按照距离从小到大排序
+    //     return tiles.sort((a, b) => a.distance - b.distance);
+    // }
+    
     sortTilesByPriority(startX, startY, widthParts, heightParts, centerX, centerY) {
         const tiles = [];
         for (let i = startX; i < startX + widthParts; i++) {
             for (let j = startY; j < startY + heightParts; j++) {
-                const distance = Math.sqrt(Math.pow(i - centerX, 2) + Math.pow(j - centerY, 2));
+                // 使用Chebyshev距离来实现矩形扩展
+                const distance = Math.max(Math.abs(i - centerX), Math.abs(j - centerY));
                 tiles.push({ x: i, y: j, distance });
             }
         }
+        // 根据距离从小到大排序
         return tiles.sort((a, b) => a.distance - b.distance);
     }
-
+    
     async processTileBatch(batch) {
         const promises = batch.map(tile => this.processTile(tile.x, tile.y));
         await Promise.all(promises);
@@ -374,6 +420,7 @@ export class RasterRenderer extends Renderer{ // 栅格渲染器
     }
 
     render() {
+        // this.setTranslate(this.viewWindow.getXY());
         this.drawTiles(this.viewWindow.getTileGrids());
     }
 }

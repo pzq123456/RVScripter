@@ -150,13 +150,11 @@ controlCanvas.addEventListener('wheel', throttle((event) => {
     zoomLevel -= Math.sign(event.deltaY);
     zoomLevel = Math.min(viewWindow.maxZoomLevel, Math.max(0, zoomLevel));
     viewWindow.setCenter([revY, revX]);
-    drawZoom(event);
-}, 600));
+    drawZoom(zoomLevel);
+}, zoomLevel * 100));
 
-function drawZoom(event) {
-
+function drawZoom(zoomLevel){
     viewWindow.updateZ(zoomLevel);
-    // renderer.canvas.style.transition = 'transform 0.5s ease';
     renderer.update();
     rasterRenderer.update();
 }

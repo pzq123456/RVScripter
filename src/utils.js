@@ -97,17 +97,59 @@ function pipeline(...operations) {
     };
 }
 
-// 截流函数
-function throttle(fn, delay = 100) {
-    let timer = null;
-    return function() {
-        if (!timer) {
-            timer = setTimeout(() => {
-                fn.apply(this, arguments);
-                timer = null;
-            }, delay);
-        }
-    };
+// // 截流函数
+// function throttle(fn, delay = 100) {
+//     let timer = null;
+//     return function() {
+//         if (!timer) {
+//             timer = setTimeout(() => {
+//                 fn.apply(this, arguments);
+//                 timer = null;
+//             }, delay);
+//         }
+//     };
+// }
+
+// @function throttle(fn: Function, time: Number, context: Object): Function
+// Returns a function which executes function `fn` with the given scope `context`
+// (so that the `this` keyword refers to `context` inside `fn`'s code). The function
+// `fn` will be called no more than one time per given amount of `time`. The arguments
+// received by the bound function will be any arguments passed when binding the
+// function, followed by any arguments passed when invoking the bound function.
+// Has an `L.throttle` shortcut.
+/**
+ * 节流函数，返回一个函数，该函数在给定的时间内最多执行一次
+ * @param {Function} fn - 需要节流的函数
+ * @param {Number} time - 间隔时间
+ * @param {Object} context - 函数执行的上下文
+ * @returns 
+ */
+function throttle(fn, time, context) {
+	let lock, queuedArgs;
+
+	function later() {
+		// reset lock and call if queued
+		lock = false;
+		if (queuedArgs) {
+			wrapperFn.apply(context, queuedArgs);
+			queuedArgs = false;
+		}
+	}
+
+	function wrapperFn(...args) {
+		if (lock) {
+			// called too soon, queue to call later
+			queuedArgs = args;
+
+		} else {
+			// call and lock until later
+			fn.apply(context, args); // .apply 就是指定函数执行的上下文和参数
+			setTimeout(later, time);
+			lock = true;
+		}
+	}
+
+	return wrapperFn;
 }
 
 // 简单的防抖函数实现

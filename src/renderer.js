@@ -41,6 +41,23 @@ class Renderer{ // 渲染器 基类
         console.log(`Zoom level: ${zoomLevel}, Scale: ${scale}`);
     }
 
+    drawSquare([x, y], size = this.viewWindow.TILE_SIZE) {
+        let realX = x * size;
+        let realY = y * size;
+
+        // draw rect 
+        this.ctx.beginPath();
+        this.ctx.moveTo(realX, realY);
+        this.ctx.lineTo(realX + size, realY);
+        this.ctx.lineTo(realX + size, realY + size);
+        this.ctx.lineTo(realX, realY + size);
+        this.ctx.closePath();
+        this.ctx.stroke();
+
+        // draw text in the center of rect
+        this.ctx.fillText(`(${x},${y})`, realX + size / 2, realY + size / 2);
+    }
+
     update() {
         this.setTranslate(this.viewWindow.getXY());
         this.render();
@@ -120,23 +137,6 @@ export class VectorRenderer extends Renderer{ // 矢量渲染器
             }
         });
         this.ctx.stroke();
-    }
-
-    drawSquare([x, y], size = 256) {
-        let realX = x * size;
-        let realY = y * size;
-
-        // draw rect 
-        this.ctx.beginPath();
-        this.ctx.moveTo(realX, realY);
-        this.ctx.lineTo(realX + size, realY);
-        this.ctx.lineTo(realX + size, realY + size);
-        this.ctx.lineTo(realX, realY + size);
-        this.ctx.closePath();
-        this.ctx.stroke();
-
-        // draw text in the center of rect
-        this.ctx.fillText(`(${x},${y})`, realX + size / 2, realY + size / 2);
     }
 
     // debug function
@@ -292,17 +292,24 @@ export class VectorRenderer extends Renderer{ // 矢量渲染器
 export class RasterRenderer extends Renderer{ // 栅格渲染器
     constructor(canvas, viewWindow) {
         super(canvas, viewWindow);
-        this.stackSize = Math.min(Math.pow(2, this.viewWindow.maxZoomLevel) * 2, 256);
-        this.tileStack = new Bounded3DArray(this.stackSize);
+        this.tileStack = new Bounded3DArray(256);
 
         this.maxConcurrentRequests = 4; // 最大并发请求数
         this.retryDelay = 1000; // 重试延迟（毫秒）
         this.maxRetries = 2; // 最大重试次数
     }
 
-    drawTile([x, y], img) {
-        this.ctx.drawImage(img, (x) * this.TILE_SIZE, (y) * this.TILE_SIZE, this.TILE_SIZE, this.TILE_SIZE);
+    // draw from top left
+    drawTile([x, y], img, scale = 1) {
+        this.ctx.drawImage(img, x * this.TILE_SIZE, y * this.TILE_SIZE, this.TILE_SIZE * scale, this.TILE_SIZE * scale);
     }
+
+    // draw from bottom right
+    drawTile2([x, y], img, scale = 1) {
+        this.ctx.drawImage(img, x * this.TILE_SIZE - this.TILE_SIZE * (scale - 1), y * this.TILE_SIZE - this.TILE_SIZE * (scale - 1), this.TILE_SIZE * scale, this.TILE_SIZE * scale);
+    }
+
+
 
     async drawTiles(tileGrids) {
         const { widthParts, heightParts, startX, startY } = tileGrids;
@@ -386,6 +393,21 @@ export class RasterRenderer extends Renderer{ // 栅格渲染器
     }
 
     async processTile(x, y) {
+        let parentTileTL = this.tileStack.getParentTileIfTopLeft(this.viewWindow.zoom, x, y);
+        let parentTileBR = this.tileStack.getParentTileIfBottomRight(this.viewWindow.zoom, x, y);
+
+        if(parentTileTL){
+            this.drawTile([x, y], parentTileTL,2);
+            // remove parentTileTL from tileStack
+            // this.tileStack.remove(this.viewWindow.zoom, parentTileTL.x, parentTileTL.y);
+        }
+
+        if(parentTileBR){
+            this.drawTile2([x, y], parentTileBR,2);
+            // remove parentTileBR from tileStack
+            // this.tileStack.remove(this.viewWindow.zoom, parentTileBR.x, parentTileBR.y);
+        }
+
         if (this.tileStack.has(this.viewWindow.zoom, x, y)) {
             const img = this.tileStack.get(this.viewWindow.zoom, x, y);
             this.drawTile([x, y], img);

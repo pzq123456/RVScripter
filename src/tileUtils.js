@@ -36,6 +36,7 @@ export class Bounded3DArray {
             }
             this.queue.push(key);
         }
+
         this.map.set(key, value);
     }
 
@@ -48,6 +49,53 @@ export class Bounded3DArray {
         const key = `${z},${x},${y}`;
         return this.map.has(key);
     }
+
+    // remove x,y,z
+    remove(z, x, y) {
+        const key = `${z},${x},${y}`;
+        this.map.delete(key);
+        this.queue.splice(this.queue.indexOf(key), 1);
+    }
+
+        /**
+     * Check if the parent tile of the specified tile exists in the cache
+     * and if the tile is located in the top-left quadrant of the parent tile.
+     * @param {number} z - Current zoom level
+     * @param {number} x - X-coordinate of the tile
+     * @param {number} y - Y-coordinate of the tile
+     * @returns {any|null} - The value of the parent tile if the conditions are met, otherwise null
+     */
+    getParentTileIfTopLeft(z, x, y) {
+        if (z === 0) return null; // No parent exists for the root level (z=0)
+        
+        const parentZ = z - 1;
+        const parentX = Math.floor(x / 2);
+        const parentY = Math.floor(y / 2);
+
+        // Check if the tile is in the top-left quadrant of the parent tile
+        if (x % 2 === 0 && y % 2 === 0) {
+            return this.get(parentZ, parentX, parentY);
+        }
+        
+        return null;
+    }
+
+    getParentTileIfBottomRight(z, x, y) {
+        if (z === 0) return null; // No parent exists for the root level (z=0)
+        
+        const parentZ = z - 1;
+        const parentX = Math.floor(x / 2);
+        const parentY = Math.floor(y / 2);
+
+        // Check if the tile is in the bottom-right quadrant of the parent tile
+        if (x % 2 === 1 && y % 2 === 1) {
+            return this.get(parentZ, parentX, parentY);
+        }
+        
+        return null;
+    }
+
+    
 }
 
 // export class Bounded3DArray {

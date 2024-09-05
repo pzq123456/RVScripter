@@ -1,8 +1,8 @@
 import { Canvas } from "./src/canvas.js";
 import { VectorRenderer, RasterRenderer } from "./src/renderer.js";
+import { ViewWindow } from "./src/viewWindow.js";
 
 import { processGeoJSONData } from "./src/geoJSON.js";
-import { ViewWindow } from "./src/viewWindow.js";
 
 const left = document.getElementById('left');
 
@@ -11,18 +11,14 @@ const canvasGroup = new Canvas(left,["raster","vector","text","control"]);
 const vectorCanvas = canvasGroup.getLayer("vector");
 const rasterCanvas = canvasGroup.getLayer("raster");
 
-
 let zoomLevel = 5;
-
 let viewCenter = [116,36];
 
 let viewWindow = new ViewWindow(viewCenter, canvasGroup.width, canvasGroup.height, zoomLevel);
 const renderer = new VectorRenderer(vectorCanvas, viewWindow);
 const rasterRenderer = new RasterRenderer(rasterCanvas, viewWindow);
 
-// let project = viewWindow.project.bind(viewWindow);
 let unproject = viewWindow.unproject.bind(viewWindow);
-// let translate = viewWindow.translate.bind(viewWindow);
 let untranslate = viewWindow.untranslate.bind(viewWindow);
 
 processGeoJSONData('./data/china.json').then(parsedData => {
@@ -33,69 +29,65 @@ processGeoJSONData('./data/china.json').then(parsedData => {
 
 const controlCanvas = canvasGroup.ControlLayer;
 const textCanvas = canvasGroup.getLayer("text");
-
 const controlctx = controlCanvas.getContext('2d');
 const textCtx = textCanvas.getContext('2d');
 
 let textArea = null;
 let pointer = null;
 let pointerType = "arrow";
-let revX,revY;
+let revX, revY;
+let textSize = 20;
+
+function draw(x, y) {
+    if (pointer) {
+        const pointerBounds = getPointerBounds(pointer);
+        controlctx.clearRect(pointerBounds.x, pointerBounds.y, pointerBounds.width, pointerBounds.height);
+    }
+    
+    pointer = { x: x, y: y, size: 30 };
+
+    // Draw new pointer
+    drawPointer(pointer.x, pointer.y, pointer.size, pointerType);
+
+    if (textArea) {
+        textCtx.clearRect(textArea.x, textArea.y, textArea.width, textArea.height);
+    }
+
+    [revX, revY] = unproject(untranslate([x, y]));
+
+    const textString = `(${revX}, ${revY})`;
+    textCtx.font = `${textSize}px Arial`;
+    const textWidth = Math.floor(textCtx.measureText(textString).width + textSize / 2);
+
+    let textdx = 20;
+    if (x + textWidth >= canvasGroup.width) {
+        textdx = -textWidth - textSize / 2;
+    }
+
+    // Draw new text
+    textCtx.fillText(textString, x + textdx, y + textSize / 2);
+
+    // Update textArea
+    textArea = {
+        x: x + textdx,
+        y: y - textSize / 2,
+        width: textWidth,
+        height: textSize + 10
+    };
+}
+
+function getPointerBounds(pointer) {
+    return {
+        x: pointer.x - pointer.size,
+        y: pointer.y - pointer.size,
+        width: pointer.size * 2,
+        height: pointer.size * 2
+    };
+}
 
 let isDragging = false;
 let lastX;
 let lastY;
-
-function draw(x,y){
-    if(!pointer){
-        controlctx.clearRect(0, 0, canvasGroup.width, canvasGroup.height);
-    }else{
-        controlctx.clearRect(pointer.x - pointer.size, pointer.y - pointer.size, pointer.size * 2, pointer.size * 2);
-    }
-
-    pointer = {
-        x: x,
-        y: y,
-        size: 20
-    }
-
-    drawPointer(x, y, pointer.size, pointerType);
-
-    if(!textArea){
-        textCtx.clearRect(0, 0, canvasGroup.width, canvasGroup.height);
-    }else{
-        textCtx.clearRect(textArea.x, textArea.y, textArea.width, textArea.height);
-    }
-
-    [revX,revY] = unproject(untranslate([x,y]));
-
-    textCtx.fillStyle = 'black';
-    textCtx.font = '40px serif';
-    let textWidth = Math.floor(textCtx.measureText(`(${revX}, ${revY})`).width + 20);
-
-    let textdx= 0;
-
-    // 超出范围检测 并调整
-    if(x + textWidth >= canvasGroup.width){
-        textdx = - textWidth - 10;
-    }else{
-        textdx = 0;
-    }
-
-    // 添加背景色 透明的灰色
-    // textCtx.fillStyle = 'rgba(255,255,255,0.3)';
-    // textCtx.fillRect(x + textdx, y - 10, textWidth, 25);
-    textCtx.fillStyle = 'black';
-    textCtx.fillText(`(${revX}, ${revY})`, x + textdx, y + 20);
-
-    // update textArea
-    textArea = {
-        x: x + textdx,
-        y: y - 20,
-        width: textWidth,
-        height: 45
-    }
-}
 
 addEventListeners(controlCanvas, [
     {
@@ -154,6 +146,87 @@ addEventListeners(controlCanvas, [
     }
 ]);
 
+// 双指触摸事件（模拟双击）
+let lastTap = 0;
+
+// 添加触摸事件监听器
+addEventListeners(controlCanvas, [
+    // 保留现有的鼠标事件处理器...
+    
+    // 触摸开始事件
+    {
+        event: 'touchstart',
+        handler: (event) => {
+            event.preventDefault(); // 防止默认行为（如滚动）
+            isDragging = true;
+            const touch = event.touches[0];
+            lastX = touch.clientX;
+            lastY = touch.clientY;
+            pointerType = "o";
+        }
+    },
+    // 触摸结束事件
+    {
+        event: 'touchend',
+        handler: () => {
+            isDragging = false;
+            pointerType = "arrow";
+        }
+    },
+    // 触摸取消事件
+    {
+        event: 'touchcancel',
+        handler: () => {
+            isDragging = false;
+            pointerType = "arrow";
+        }
+    },
+    // 触摸移动事件
+    {
+        event: 'touchmove',
+        handler: (event) => {
+            event.preventDefault();
+            const touch = event.touches[0];
+            const rect = controlCanvas.getBoundingClientRect();
+            let x = touch.clientX - rect.left;
+            let y = touch.clientY - rect.top;
+            throttle(draw(x, y));
+
+            if (!isDragging) return;
+            requestAnimationFrame(() => {
+                throttle(drawMap(x, y));
+            });
+        }
+    },
+    // 双指缩放事件（模拟鼠标滚轮缩放）
+    {
+        event: 'gesturechange',
+        handler: (event) => {
+            event.preventDefault();
+            // 根据缩放比例调整 zoomLevel
+            const zoomChange = event.scale > 1 ? -1 : 1;
+            zoomLevel += zoomChange;
+            zoomLevel = Math.min(viewWindow.maxZoomLevel, Math.max(0, zoomLevel));
+            viewWindow.setCenter([revY, revX]);
+            drawZoom(zoomLevel);
+        }
+    },
+    {
+        event: 'touchend',
+        handler: (event) => {
+            const currentTime = new Date().getTime();
+            const tapLength = currentTime - lastTap;
+            if (tapLength < 500 && event.touches.length === 0 && event.changedTouches.length === 1) {
+                // 双击事件
+                copyToClipboard(`(${revX},${revY})`);
+            }
+            lastTap = currentTime;
+        }
+    }
+
+]);
+
+
 function drawMap(x, y) {
     if (isDragging) {
         let dx = x - lastX;
@@ -189,13 +262,14 @@ function drawPointer(x, y, size = 10, type = "x"){
 }
 
 function drawPointerO(x, y, size = 10){
-    size /= 2;
-    controlctx.beginPath();
-    controlctx.arc(x, y, size, 0, Math.PI * 2); // 绘制自定义光标（一个圆形）
-    controlctx.fillStyle = 'green'; // 自定义光标颜色
-    controlctx.fill();
-    controlctx.strokeStyle = 'white';
-    controlctx.stroke();
+    let path = "M28.09,9.74a4,4,0,0,0-1.16.19c-.19-1.24-1.55-2.18-3.27-2.18A4,4,0,0,0,22.13,8,3.37,3.37,0,0,0,19,6.3a3.45,3.45,0,0,0-2.87,1.32,3.65,3.65,0,0,0-1.89-.51A3.05,3.05,0,0,0,11,9.89v.91c-1.06.4-4.11,1.8-4.91,4.84s.34,8,2.69,11.78a25.21,25.21,0,0,0,5.9,6.41.9.9,0,0,0,.53.17H25.55a.92.92,0,0,0,.55-.19,13.13,13.13,0,0,0,3.75-6.13A25.8,25.8,0,0,0,31.41,18v-5.5A3.08,3.08,0,0,0,28.09,9.74ZM29.61,18a24,24,0,0,1-1.47,9.15A12.46,12.46,0,0,1,25.2,32.2H15.47a23.75,23.75,0,0,1-5.2-5.72c-2.37-3.86-3-8.23-2.48-10.39A5.7,5.7,0,0,1,11,12.76v7.65a.9.9,0,0,0,1.8,0V9.89c0-.47.59-1,1.46-1s1.49.52,1.49,1v5.72h1.8V8.81c0-.28.58-.71,1.46-.71s1.53.48,1.53.75v6.89h1.8V10l.17-.12a2.1,2.1,0,0,1,1.18-.32c.93,0,1.5.44,1.5.68l0,6.5H27V11.87a1.91,1.91,0,0,1,1.12-.33c.86,0,1.52.51,1.52.94Z";
+    let svgPath = new Path2D(path);
+    controlctx.save();
+    controlctx.translate(x, y);
+    controlctx.scale(size / 32, size / 34);
+    controlctx.fillStyle = 'black';
+    controlctx.fill(svgPath);
+    controlctx.restore();
 }
 
 function drawPointerX(x, y, size = 10){
@@ -215,8 +289,14 @@ function drawPointerArrow(x, y, size = 10) {
     controlctx.save();
     controlctx.translate(x, y);
     controlctx.scale(size / 300, size / 300);
-    controlctx.fillStyle = 'green';
+    controlctx.fillStyle = 'black';
     controlctx.fill(svgPath);
+
+    // white stroke
+    controlctx.strokeStyle = 'white';
+    controlctx.lineWidth = 10;
+    controlctx.stroke(svgPath);
+
     controlctx.restore();
 }
 

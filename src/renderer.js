@@ -41,9 +41,15 @@ class Renderer{ // 渲染器 基类
         console.log(`Zoom level: ${zoomLevel}, Scale: ${scale}`);
     }
 
+    // debug function
     drawSquare([x, y], size = this.viewWindow.TILE_SIZE) {
         let realX = x * size;
         let realY = y * size;
+
+        // set stroke color #CCE0C1
+        this.ctx.strokeStyle = "#A4AAC1";
+        // set line width
+        this.ctx.lineWidth = 5;
 
         // draw rect 
         this.ctx.beginPath();
@@ -54,8 +60,24 @@ class Renderer{ // 渲染器 基类
         this.ctx.closePath();
         this.ctx.stroke();
 
+        // fillcolor #AAD3DF
+        this.ctx.fillStyle = "#AAD3DF";
+        this.ctx.fill();
+
         // draw text in the center of rect
-        this.ctx.fillText(`(${x},${y})`, realX + size / 2, realY + size / 2);
+        // this.ctx.fillText(`(${x},${y})`, realX + size / 2, realY + size / 2);
+    }
+
+    // debug function
+    drawTileGrids(tileGrids){
+        const { widthParts, heightParts, startX, startY } = tileGrids;
+
+        // draw square
+        for(let i = startX; i < startX + widthParts; i++){
+            for(let j = startY; j < startY + heightParts; j++){
+                this.drawSquare([i, j]);
+            }
+        }
     }
 
     update() {
@@ -137,18 +159,6 @@ export class VectorRenderer extends Renderer{ // 矢量渲染器
             }
         });
         this.ctx.stroke();
-    }
-
-    // debug function
-    drawTileGrids(tileGrids){
-        const { widthParts, heightParts, startX, startY } = tileGrids;
-
-        // draw square
-        for(let i = startX; i < startX + widthParts; i++){
-            for(let j = startY; j < startY + heightParts; j++){
-                this.drawSquare([i, j]);
-            }
-        }
     }
 
     drawPolygons(polygons) {
@@ -318,6 +328,7 @@ export class RasterRenderer extends Renderer{ // 栅格渲染器
 
     async drawTiles() {
         let tileGrids = this.viewWindow.getTileGrids();
+        this.drawTileGrids(tileGrids);
         const { widthParts, heightParts, startX, startY } = tileGrids;
         const centerX = startX + Math.floor(widthParts / 2);
         const centerY = startY + Math.floor(heightParts / 2);

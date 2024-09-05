@@ -4,5 +4,6 @@ body {
 }
 
 canvas {
-    cursor: none; /*禁用原生鼠标光标*/
+    cursor: none; 
+    /* 禁用原生鼠标光标 */
 }

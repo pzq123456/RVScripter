@@ -188,3 +188,9 @@ function throttleAndDebounce(func, throttleLimit, debounceDelay) {
         }
     };
 }
+
+function addEventListeners(element, events) {
+    events.forEach(({ event, handler }) => {
+        element.addEventListener(event, handler);
+    });
+}

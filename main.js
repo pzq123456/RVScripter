@@ -39,8 +39,12 @@ const textCtx = textCanvas.getContext('2d');
 
 let textArea = null;
 let pointer = null;
-let pointerType = "x";
+let pointerType = "arrow";
 let revX,revY;
+
+let isDragging = false;
+let lastX;
+let lastY;
 
 function draw(x,y){
     if(!pointer){
@@ -52,7 +56,7 @@ function draw(x,y){
     pointer = {
         x: x,
         y: y,
-        size: 16
+        size: 20
     }
 
     drawPointer(x, y, pointer.size, pointerType);
@@ -66,7 +70,7 @@ function draw(x,y){
     [revX,revY] = unproject(untranslate([x,y]));
 
     textCtx.fillStyle = 'black';
-    textCtx.font = '20px serif';
+    textCtx.font = '40px serif';
     let textWidth = Math.floor(textCtx.measureText(`(${revX}, ${revY})`).width + 20);
 
     let textdx= 0;
@@ -78,59 +82,79 @@ function draw(x,y){
         textdx = 0;
     }
 
-    textCtx.fillText(`(${revX}, ${revY})`, x + textdx, y + 10);
+    // 添加背景色 透明的灰色
+    // textCtx.fillStyle = 'rgba(255,255,255,0.3)';
+    // textCtx.fillRect(x + textdx, y - 10, textWidth, 25);
+    textCtx.fillStyle = 'black';
+    textCtx.fillText(`(${revX}, ${revY})`, x + textdx, y + 20);
 
     // update textArea
     textArea = {
         x: x + textdx,
-        y: y - 10,
+        y: y - 20,
         width: textWidth,
-        height: 25
+        height: 45
     }
 }
 
-let isDragging = false;
-let lastX;
-let lastY;
+addEventListeners(controlCanvas, [
+    {
+        event: 'mousedown',
+        handler: (event) => {
+            isDragging = true;
+            lastX = event.clientX;
+            lastY = event.clientY;
+            pointerType = "o";
+        }
+    },
+    {
+        event: 'mouseup',
+        handler: () => {
+            isDragging = false;
+            pointerType = "arrow";
+        }
+    },
+    {
+        event: 'dblclick',
+        handler: (event) => {
+            copyToClipboard(`(${revX},${revY})`);
+        }
+    },
+    {
+        event: 'mouseleave',
+        handler: () => {
+            isDragging = false;
+            pointerType = "arrow";
+        }
+    },
+    {
+        event: 'mousemove',
+        handler: (event) => {
+            const rect = controlCanvas.getBoundingClientRect();
+            let x = event.clientX - rect.left;
+            let y = event.clientY - rect.top;
+            throttle(draw(x, y));
 
-controlCanvas.addEventListener('mousedown', (event) => {
-    isDragging = true;
-    lastX = event.clientX;
-    lastY = event.clientY;
-    pointerType = "o";
-});
-
-controlCanvas.addEventListener('mouseup', () => {
-    isDragging = false;
-    pointerType = "x";
-});
-
-// dbclic
-controlCanvas.addEventListener('dblclick', (event) => {
-    copyToClipboard(`(${revX},${revY})`);
-});
-
-// mouse leave
-controlCanvas.addEventListener('mouseleave', () => {
-    isDragging = false;
-    pointerType = "x";
-});
-
-controlCanvas.addEventListener('mousemove', (event) => {
-    const rect = controlCanvas.getBoundingClientRect();
-    let x = event.clientX - rect.left;
-    let y = event.clientY - rect.top;
-    draw(x, y);
-
-    if (!isDragging) return;
-
-    requestAnimationFrame(() => {
-        throttle(drawMap(x, y));
-    });
-});
+            if (!isDragging) return;
+            requestAnimationFrame(() => {
+                
+                throttle(drawMap(x, y));
+            });
+        }
+    },
+    {
+        event: 'wheel', // 添加滚轮事件
+        handler: (event) => {
+            // 调整 zoomLevel 在 0 - 20 个整数之间
+            zoomLevel -= Math.sign(event.deltaY);
+            zoomLevel = Math.min(viewWindow.maxZoomLevel, Math.max(0, zoomLevel));
+            viewWindow.setCenter([revY, revX]);
+            drawZoom(zoomLevel);
+        }
+    }
+]);
 
 function drawMap(x, y) {
-
     if (isDragging) {
         let dx = x - lastX;
         let dy = y - lastY;
@@ -140,40 +164,13 @@ function drawMap(x, y) {
         lastX = x;
         lastY = y;
     }
-
 }
-
-
-// 添加滚轮事件
-controlCanvas.addEventListener('wheel', throttle((event) => {
-    // 调整 zoomLevel 在 0 - 20 个整数之间
-    zoomLevel -= Math.sign(event.deltaY);
-    zoomLevel = Math.min(viewWindow.maxZoomLevel, Math.max(0, zoomLevel));
-    viewWindow.setCenter([revY, revX]);
-    drawZoom(zoomLevel);
-}, zoomLevel * 100));
 
 function drawZoom(zoomLevel){
     viewWindow.updateZ(zoomLevel);
     renderer.update();
     rasterRenderer.update();
 }
-
-// 使用
-document.addEventListener('keydown', (event) => {
-
-    if(event.key == "w"){
-        zoomLevel += 1;
-    }
-    else if(event.key == "s"){
-        zoomLevel -= 1;
-    }
-    zoomLevel = Math.min(viewWindow.maxZoomLevel, Math.max(0, zoomLevel));
-
-    viewWindow.setCenter([revY, revX]);
-
-    drawZoom(zoomLevel);
-});
 
 function drawPointer(x, y, size = 10, type = "x"){
     switch (type) {
@@ -182,6 +179,9 @@ function drawPointer(x, y, size = 10, type = "x"){
             break;
         case "x":
             drawPointerX(x, y, size);
+            break;
+        case "arrow":
+            drawPointerArrow(x, y, size);
             break;
         default:
             drawPointerO(x, y, size);
@@ -207,6 +207,17 @@ function drawPointerX(x, y, size = 10){
     controlctx.lineTo(x - size, y + size);
     controlctx.strokeStyle = 'green';
     controlctx.stroke();
+}
+
+function drawPointerArrow(x, y, size = 10) {
+    let path = `M293.808,239.59l-82.841-82.878l60.437-34.929c3.54-2.047,5.601-5.936,5.306-10.015c-0.295-4.08-2.894-7.632-6.692-9.146 L14.699,0.762C10.734-0.821,6.212,0.109,3.193,3.127c-3.018,3.017-3.948,7.541-2.368,11.504l101.813,255.434 c1.515,3.801,5.066,6.401,9.147,6.696c4.081,0.301,7.972-1.766,10.017-5.309l34.904-60.449l82.835,82.868 c2.002,2.004,4.719,3.129,7.551,3.129c2.833,0,5.55-1.126,7.553-3.129l39.162-39.186 C297.976,250.516,297.976,243.758,293.808,239.59z`;
+    let svgPath = new Path2D(path);
+    controlctx.save();
+    controlctx.translate(x, y);
+    controlctx.scale(size / 300, size / 300);
+    controlctx.fillStyle = 'green';
+    controlctx.fill(svgPath);
+    controlctx.restore();
 }
 
 // function 

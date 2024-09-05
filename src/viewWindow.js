@@ -14,8 +14,12 @@ export class ViewWindow{
         this.maxZoomLevel = 19;
     }
 
-    getMapScale(){
-        return MapScale(this.center[0], this.zoom, 96);
+    getMapScale(
+        // 取几位有效数字
+        validDigits = 6
+    ){
+        // return MapScale(this.center[0], this.zoom, 96);
+        return MapScale(this.center[0], this.zoom, 96).toFixed(validDigits);
     }
 
     getXY(){

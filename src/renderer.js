@@ -266,7 +266,7 @@ export class VectorRenderer extends Renderer{ // 矢量渲染器
         this.setStrokeColor('blue', 2);
         this.drawLines(screenCoor.lines);
 
-        this.setFillColor('rgba(255, 0, 0, 0.3)');
+        this.setFillColor('rgba(255, 0, 0, 0.1)');
         this.setStrokeColor('black', 1);
         this.drawPolygons(screenCoor.polygons);
 
@@ -276,13 +276,18 @@ export class VectorRenderer extends Renderer{ // 矢量渲染器
         this.setStrokeColor('purple', 2);
         this.drawMultiLines(screenCoor.multiLines);
 
-        this.setFillColor('rgba(0, 255, 0, 0.3)');
+        this.setFillColor('rgba(0, 255, 0, 0.1)');
         this.setStrokeColor('brown', 1);
         this.drawMultiPolygons(screenCoor.multiPolygons);
 
-        this.setFillColor('green');
-        this.setTextStyle();
-        this.ctx.fillText(`Center: ${this.viewWindow.center}, Zoom: ${this.viewWindow.zoom},Scale: 1:${this.viewWindow.getMapScale()} `,this.viewWindow.x, this.viewWindow.y + 40);
+        drawInfoBar(this.ctx, this.viewWindow, this.width, this.height); // 信息条
+
+        // // 文字底色
+        // this.ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
+        // this.ctx.fillRect(this.viewWindow.x, this.viewWindow.y + this.height - 40, this.width, 40);
+
+        // this.setTextStyle();
+        // this.ctx.fillText(`Center: ${this.viewWindow.center}, Zoom: ${this.viewWindow.zoom},Scale: 1:${this.viewWindow.getMapScale()}, OpenStreetMap`,this.viewWindow.x, this.viewWindow.y + this.height - 10);
 
         // this.drawTileGrids(this.viewWindow.getTileGrids(this.viewWindow.zoom)); // debug
     }
@@ -311,7 +316,8 @@ export class RasterRenderer extends Renderer{ // 栅格渲染器
 
 
 
-    async drawTiles(tileGrids) {
+    async drawTiles() {
+        let tileGrids = this.viewWindow.getTileGrids();
         const { widthParts, heightParts, startX, startY } = tileGrids;
         const centerX = startX + Math.floor(widthParts / 2);
         const centerY = startY + Math.floor(heightParts / 2);
@@ -326,53 +332,6 @@ export class RasterRenderer extends Renderer{ // 栅格渲染器
             await this.processTileBatch(batch);
         }
     }
-
-    // drawTiles(tileGrids){
-    //     const { widthParts, heightParts, startX, startY } = tileGrids;
-    //     // draw square
-    //     for(let i = startX; i < startX + widthParts; i++){
-    //         for(let j = startY; j < startY + heightParts; j++){
-    //             // 首先检查是否已经缓存了该瓦片
-    //             if(this.tileStack.has(this.viewWindow.zoom, i, j)){
-    //                 let img = this.tileStack.get(this.viewWindow.zoom, i, j);
-    //                 this.drawTile([i, j], img);
-    //             }else{
-    //                 requestTile(this.viewWindow.zoom, i, j).then((img) => {
-    //                     this.tileStack.push(this.viewWindow.zoom, i, j, img);
-    //                     this.drawTile([i, j], img);
-    //                 }).catch(e => {
-    //                     console.error(e);
-    //                 });
-    //             }
-
-    //         }
-    //     }
-    // }
-
-
-    // sortTilesByPriority(startX, startY, widthParts, heightParts, centerX, centerY) {
-    //     const tiles = [];
-    //     for (let i = startX; i < startX + widthParts; i++) {
-    //         for (let j = startY; j < startY + heightParts; j++) {
-    //             const distance = Math.sqrt(Math.pow(i - centerX, 2) + Math.pow(j - centerY, 2));
-    //             tiles.push({ x: i, y: j, distance });
-    //         }
-    //     }
-    //     return tiles.sort((a, b) => a.distance - b.distance);
-    // }
-
-    // sortTilesByPriority(startX, startY, widthParts, heightParts, centerX, centerY) {
-    //     const tiles = [];
-    //     for (let i = startX; i < startX + widthParts; i++) {
-    //         for (let j = startY; j < startY + heightParts; j++) {
-    //             // 使用曼哈顿距离来实现矩形窗口扩展效果
-    //             const distance = Math.abs(i - centerX) + Math.abs(j - centerY);
-    //             tiles.push({ x: i, y: j, distance });
-    //         }
-    //     }
-    //     // 按照距离从小到大排序
-    //     return tiles.sort((a, b) => a.distance - b.distance);
-    // }
     
     sortTilesByPriority(startX, startY, widthParts, heightParts, centerX, centerY) {
         const tiles = [];
@@ -398,14 +357,10 @@ export class RasterRenderer extends Renderer{ // 栅格渲染器
 
         if(parentTileTL){
             this.drawTile([x, y], parentTileTL,2);
-            // remove parentTileTL from tileStack
-            // this.tileStack.remove(this.viewWindow.zoom, parentTileTL.x, parentTileTL.y);
         }
 
         if(parentTileBR){
             this.drawTile2([x, y], parentTileBR,2);
-            // remove parentTileBR from tileStack
-            // this.tileStack.remove(this.viewWindow.zoom, parentTileBR.x, parentTileBR.y);
         }
 
         if (this.tileStack.has(this.viewWindow.zoom, x, y)) {
@@ -442,7 +397,51 @@ export class RasterRenderer extends Renderer{ // 栅格渲染器
     }
 
     render() {
-        // this.setTranslate(this.viewWindow.getXY());
-        this.drawTiles(this.viewWindow.getTileGrids());
+        this.drawTiles();
     }
+}
+
+function drawInfoBar(ctx, viewWindow, width, height, options = {}) {
+    const {
+        fontSize = '16px',                // 默认字体大小
+        textColor = '#000',               // 默认文字颜色
+        backgroundColor = 'rgba(255, 255, 255, 0.3)', // 默认底色
+        dataSource = 'OpenStreetMap',     // 默认数据源
+        align = 'right'                    // 默认左对齐，可以设为 'left' 或 'right'
+    } = options;
+
+    // 计算字体大小
+    let size = parseInt(fontSize.replace('px', ''), 10);
+
+    // 设置字体样式
+    ctx.font = `${fontSize} Arial`;
+
+    // 构建显示的文本内容
+    const infoText = `Center: ${viewWindow.center}, Zoom: ${viewWindow.zoom}, Scale: 1:${viewWindow.getMapScale()}, data source: ${dataSource}`;
+
+    // 测量文本宽度
+    const textWidth = ctx.measureText(infoText).width;
+
+    // 根据对齐方式计算文本起点和背景的宽度
+    let textX = viewWindow.x;
+    if (align === 'right') {
+        textX = viewWindow.x + width;
+    }
+
+    // 设置文字底色，仅限于文字宽度区域
+    ctx.fillStyle = backgroundColor;
+    ctx.fillRect(textX - textWidth, viewWindow.y + height - size, textWidth, size);
+
+    // 设置文字颜色
+    ctx.fillStyle = textColor;
+
+    // 设置文字对齐方式
+    ctx.textAlign = align;
+
+    // 绘制文字信息
+    ctx.fillText(
+        infoText,
+        textX,
+        viewWindow.y + height
+    );
 }

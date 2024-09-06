@@ -194,3 +194,10 @@ function addEventListeners(element, events) {
         element.addEventListener(event, handler);
     });
 }
+
+// 工具函数 将某个内容写入粘贴板
+function copyToClipboard(str) {
+    navigator.clipboard.writeText(str).then(function() {
+        console.log('Async: Copying to clipboard was successful!');
+    });
+}

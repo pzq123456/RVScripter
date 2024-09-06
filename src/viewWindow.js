@@ -14,6 +14,10 @@ export class ViewWindow{
         this.maxZoomLevel = 19;
     }
 
+    // getLonLat(x,y){
+    //     return this.unproject([x + this.x, y + this.y]);
+    // }
+
     getMapScale(
         // 取几位有效数字
         validDigits = 6

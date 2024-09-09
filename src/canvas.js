@@ -5,6 +5,7 @@
  *  text Layer\ zIndex = 2
  *  control Layer\ zIndex = 3
  */
+import { uuid } from './utils.js';
 
 export class Canvas{
     #uuid;

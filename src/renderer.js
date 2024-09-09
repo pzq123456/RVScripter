@@ -1,4 +1,5 @@
 import { Bounded3DArray, requestTile } from './tileUtils.js';
+import { applyOperationInNestedArray } from './utils.js';
 
 class Renderer{ // 渲染器 基类
     constructor(canvas, viewWindow) {
@@ -60,7 +61,7 @@ class Renderer{ // 渲染器 基类
         this.ctx.closePath();
         this.ctx.stroke();
 
-        // fillcolor #AAD3DF
+        // // fillcolor #AAD3DF
         this.ctx.fillStyle = "#AAD3DF";
         this.ctx.fill();
 
@@ -307,7 +308,7 @@ export class VectorRenderer extends Renderer{ // 矢量渲染器
 export class RasterRenderer extends Renderer{ // 栅格渲染器
     constructor(canvas, viewWindow) {
         super(canvas, viewWindow);
-        this.tileStack = new Bounded3DArray(256);
+        this.tileStack = new Bounded3DArray(512);
 
         this.maxConcurrentRequests = 4; // 最大并发请求数
         this.retryDelay = 1000; // 重试延迟（毫秒）
@@ -329,12 +330,13 @@ export class RasterRenderer extends Renderer{ // 栅格渲染器
     async drawTiles() {
         let tileGrids = this.viewWindow.getTileGrids();
         this.drawTileGrids(tileGrids);
-        const { widthParts, heightParts, startX, startY } = tileGrids;
+        const { widthParts, heightParts, startX, startY, zoom } = tileGrids;
         const centerX = startX + Math.floor(widthParts / 2);
         const centerY = startY + Math.floor(heightParts / 2);
 
         // 根据到中心的距离对瓦片进行排序
-        const sortedTiles = this.sortTilesByPriority(startX, startY, widthParts, heightParts, centerX, centerY);
+        const sortedTiles = this.sortTilesByPriority(startX, startY, widthParts, heightParts, centerX, centerY, zoom);
+        // console.log(sortedTiles);
 
         // 批量处理瓦片
         const batchSize = 16; // 每批处理的瓦片数
@@ -344,13 +346,13 @@ export class RasterRenderer extends Renderer{ // 栅格渲染器
         }
     }
     
-    sortTilesByPriority(startX, startY, widthParts, heightParts, centerX, centerY) {
+    sortTilesByPriority(startX, startY, widthParts, heightParts, centerX, centerY, zoom) {
         const tiles = [];
         for (let i = startX; i < startX + widthParts; i++) {
             for (let j = startY; j < startY + heightParts; j++) {
                 // 使用Chebyshev距离来实现矩形扩展
                 const distance = Math.max(Math.abs(i - centerX), Math.abs(j - centerY));
-                tiles.push({ x: i, y: j, distance });
+                tiles.push({ x: i, y: j, distance, zoom });
             }
         }
         // 根据距离从小到大排序
@@ -358,13 +360,13 @@ export class RasterRenderer extends Renderer{ // 栅格渲染器
     }
     
     async processTileBatch(batch) {
-        const promises = batch.map(tile => this.processTile(tile.x, tile.y));
+        const promises = batch.map(tile => this.processTile(tile.zoom, tile.x, tile.y));
         await Promise.all(promises);
     }
 
-    async processTile(x, y) {
-        let parentTileTL = this.tileStack.getParentTileIfTopLeft(this.viewWindow.zoom, x, y);
-        let parentTileBR = this.tileStack.getParentTileIfBottomRight(this.viewWindow.zoom, x, y);
+    async processTile(z, x, y) {
+        let parentTileTL = this.tileStack.getParentTileIfTopLeft(z, x, y);
+        let parentTileBR = this.tileStack.getParentTileIfBottomRight(z, x, y);
 
         if(parentTileTL){
             this.drawTile([x, y], parentTileTL,2);
@@ -374,23 +376,25 @@ export class RasterRenderer extends Renderer{ // 栅格渲染器
             this.drawTile2([x, y], parentTileBR,2);
         }
 
-        if (this.tileStack.has(this.viewWindow.zoom, x, y)) {
-            const img = this.tileStack.get(this.viewWindow.zoom, x, y);
+        if (this.tileStack.has(z, x, y)) {
+            const img = this.tileStack.get(z, x, y);
             this.drawTile([x, y], img);
         } else {
-            await this.requestAndDrawTile(x, y);
+            await this.requestAndDrawTile(z, x, y);
         }
     }
 
-    async requestAndDrawTile(x, y, retries = 0) {
+    async requestAndDrawTile(z, x, y, retries = 0) {
         try {
-            const img = await this.requestTileWithRetry(this.viewWindow.zoom, x, y);
-            this.tileStack.push(this.viewWindow.zoom, x, y, img);
+            const img = await this.requestTileWithRetry(z, x, y);
+            this.tileStack.push(z, x, y, img);
             this.drawTile([x, y], img);
         } catch (error) {
-            console.error(`Failed to load tile at zoom ${this.viewWindow.zoom}, x: ${x}, y: ${y}`, error);
+            // throllte and retry
             if (retries < this.maxRetries) {
-                setTimeout(() => this.requestAndDrawTile(x, y, retries + 1), this.retryDelay);
+                setTimeout(() => this.requestAndDrawTile(z, x, y, retries + 1), this.retryDelay);
+            }else{
+                console.error(`Failed to load tile at zoom ${z}, x: ${x}, y: ${y}`, error);
             }
         }
     }
@@ -455,4 +459,40 @@ function drawInfoBar(ctx, viewWindow, width, height, options = {}) {
         textX,
         viewWindow.y + height
     );
+}
+
+
+/**
+ * 节流函数，返回一个函数，该函数在给定的时间内最多执行一次
+ * @param {Function} fn - 需要节流的函数
+ * @param {Number} time - 间隔时间
+ * @param {Object} context - 函数执行的上下文
+ * @returns 
+ */
+function throttle(fn, time, context) {
+	let lock, queuedArgs;
+
+	function later() {
+		// reset lock and call if queued
+		lock = false;
+		if (queuedArgs) {
+			wrapperFn.apply(context, queuedArgs);
+			queuedArgs = false;
+		}
+	}
+
+	function wrapperFn(...args) {
+		if (lock) {
+			// called too soon, queue to call later
+			queuedArgs = args;
+
+		} else {
+			// call and lock until later
+			fn.apply(context, args); // .apply 就是指定函数执行的上下文和参数
+			setTimeout(later, time);
+			lock = true;
+		}
+	}
+
+	return wrapperFn;
 }

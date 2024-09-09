@@ -63,7 +63,8 @@ export class ViewWindow{
             widthParts: Math.max(1, validWidth),  // 应当绘制的瓦片在横向上的个数
             heightParts: Math.max(1, validHeight), // 应当绘制的瓦片在纵向上的个数
             startX: startX,           // 起始瓦片的横向编码
-            startY: startY            // 起始瓦片的纵向编码
+            startY: startY,            // 起始瓦片的纵向编码
+            zoom: zoom
         };
     }
 

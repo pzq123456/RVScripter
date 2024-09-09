@@ -30,14 +30,17 @@ export class Bounded3DArray {
     push(z, x, y, value) {
         const key = `${z},${x},${y}`;
         if (!this.map.has(key)) {
-            if (this.queue.length >= this.size) {
-                const oldestKey = this.queue.shift();
-                this.map.delete(oldestKey);
-            }
+            // if (this.queue.length >= this.size) {
+            //     const oldestKey = this.queue.shift();
+            //     this.map.delete(oldestKey);
+            // }
             this.queue.push(key);
         }
 
         this.map.set(key, value);
+        // 打印当前内存大小 格式 currentSize/totalSize
+        console.log(`${this.queue.length}/${this.size}`);
+        this.clear();
     }
 
     get(z, x, y) {
@@ -55,6 +58,24 @@ export class Bounded3DArray {
         const key = `${z},${x},${y}`;
         this.map.delete(key);
         this.queue.splice(this.queue.indexOf(key), 1);
+    }
+
+    clear(num = 32) {
+        // 若尚有 num 个缓存，则不清空
+        if (Math.abs(this.size - this.queue.length) >= num) {
+            return;
+        }
+
+        // 检查num是否合法 不能大于 currentSize
+        if (num > this.queue.length) {
+            return;
+        }
+
+        // 清空特定数量的缓存
+        for (let i = 0; i < num; i++) {
+            const key = this.queue.shift();
+            this.map.delete(key);
+        }
     }
 
         /**
@@ -124,7 +145,7 @@ export class Bounded3DArray {
 //     push(z, x, y, value) {
 //         // 优先级计算
 
-//         // this.setPriorityForZoom(z, this.priorityFunction(z));
+//         this.setPriorityForZoom(z, this.priorityFunction(z));
 
 //         const key = `${z},${x},${y}`;
 //         if (!this.map.has(key)) {
@@ -190,6 +211,44 @@ export class Bounded3DArray {
 //         while (this.queue.length > this.size) {
 //             this.removeLowestPriority();
 //         }
+//     }
+
+//     /**
+//      * Check if the parent tile of the specified tile exists in the cache
+//      * and if the tile is located in the top-left quadrant of the parent tile.
+//      * @param {number} z - Current zoom level
+//      * @param {number} x - X-coordinate of the tile
+//      * @param {number} y - Y-coordinate of the tile
+//      * @returns {any|null} - The value of the parent tile if the conditions are met, otherwise null
+//      */
+//     getParentTileIfTopLeft(z, x, y) {
+//         if (z === 0) return null; // No parent exists for the root level (z=0)
+        
+//         const parentZ = z - 1;
+//         const parentX = Math.floor(x / 2);
+//         const parentY = Math.floor(y / 2);
+
+//         // Check if the tile is in the top-left quadrant of the parent tile
+//         if (x % 2 === 0 && y % 2 === 0) {
+//             return this.get(parentZ, parentX, parentY);
+//         }
+        
+//         return null;
+//     }
+
+//     getParentTileIfBottomRight(z, x, y) {
+//         if (z === 0) return null; // No parent exists for the root level (z=0)
+        
+//         const parentZ = z - 1;
+//         const parentX = Math.floor(x / 2);
+//         const parentY = Math.floor(y / 2);
+
+//         // Check if the tile is in the bottom-right quadrant of the parent tile
+//         if (x % 2 === 1 && y % 2 === 1) {
+//             return this.get(parentZ, parentX, parentY);
+//         }
+        
+//         return null;
 //     }
 // }
 

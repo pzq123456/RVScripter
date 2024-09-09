@@ -1,4 +1,4 @@
-function uuid(){
+export function uuid(){
     return Math.random().toString(36).substring(2, 15) + 
             Math.random().toString(36).substring(2, 15);
 }
@@ -63,7 +63,7 @@ function transform(XY, matrix = [1, 0, 0, 1, 0, 0]){
 /**
  * 获取屏幕 DPI
  */
-function getScreenDPI(){
+export function getScreenDPI(){
     let div = document.createElement('div');
     div.style = 'width: 1in; height: 1in; position: absolute; left: -100%; top: -100%;';
     document.body.appendChild(div);
@@ -76,7 +76,7 @@ function getScreenDPI(){
  * This function is usefull when you have a nested array like this(eg. GeoJSON coordinates):
  * [[[x1,y1],[x2,y2]...]] do any operation on each element([x,y]) and return the result in place.
  */
-function applyOperationInNestedArray(arr, operation) {
+export function applyOperationInNestedArray(arr, operation) {
     return arr.map(element => {
         if (Array.isArray(element[0])) {
             return applyOperationInNestedArray(element, operation);
@@ -124,7 +124,7 @@ function pipeline(...operations) {
  * @param {Object} context - 函数执行的上下文
  * @returns 
  */
-function throttle(fn, time, context) {
+export function throttle(fn, time, context) {
 	let lock, queuedArgs;
 
 	function later() {
@@ -153,15 +153,15 @@ function throttle(fn, time, context) {
 }
 
 // 简单的防抖函数实现
-function debounce(func, delay) {
-    let timeout;
-    return function(...args) {
-        clearTimeout(timeout);
-        timeout = setTimeout(() => func.apply(this, args), delay);
-    };
-}
+// function debounce(func, delay) {
+//     let timeout;
+//     return function(...args) {
+//         clearTimeout(timeout);
+//         timeout = setTimeout(() => func.apply(this, args), delay);
+//     };
+// }
 
-function throttleAndDebounce(func, throttleLimit, debounceDelay) {
+export function throttleAndDebounce(func, throttleLimit, debounceDelay) {
     let throttleTimeout;
     let debounceTimeout;
     let lastRan;

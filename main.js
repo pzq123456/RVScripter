@@ -13,8 +13,8 @@ const canvasGroup = new Canvas(left,["raster","vector","text","control"]);
 const vectorCanvas = canvasGroup.getLayer("vector");
 const rasterCanvas = canvasGroup.getLayer("raster");
 
-let zoomLevel = 5;
-let viewCenter = [116,36];
+let zoomLevel = 13;
+let viewCenter = [114.18020773261166,22.303638960209366];
 
 const viewWindow = new ViewWindow(viewCenter, canvasGroup.width, canvasGroup.height, zoomLevel);
 const renderer = new VectorRenderer(vectorCanvas, viewWindow);

@@ -39,7 +39,7 @@ export class Bounded3DArray {
 
         this.map.set(key, value);
         // 打印当前内存大小 格式 currentSize/totalSize
-        console.log(`${this.queue.length}/${this.size}`);
+        // console.log(`${this.queue.length}/${this.size}`);
         this.clear();
     }
 

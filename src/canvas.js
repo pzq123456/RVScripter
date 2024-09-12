@@ -17,8 +17,8 @@ export class Canvas{
     constructor(
         parentElement = null,
         layerNames = ["game", "text", "control"],
-        width = 2048, 
-        height = 1024, 
+        width = 1024, 
+        height = 512, 
         zIndexFrom = 0 
     ){
 
@@ -120,6 +120,8 @@ export class Canvas{
         myCanvas.height = this.height;
         myCanvas.id = name + "-" + this.uuid;
         myCanvas.style.position = 'absolute';
+
+        myCanvas.style.border = '1px solid black';
         myCanvas.style.zIndex = z;
 
         return myCanvas;

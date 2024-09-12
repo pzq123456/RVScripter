@@ -7,8 +7,6 @@ class ControlRenderer{ // 渲染逻辑与地图渲染不一样，所以单独写
     constructor(controlCanvas, textCanvas){
         this.controlCanvas = controlCanvas;
         this.controlctx = this.controlCanvas.getContext('2d');
-        this.textCanvas = textCanvas;
-        this.textCtx = this.textCanvas.getContext('2d');
         this.width = this.controlCanvas.width;
         this.pointer = null;
         this.pointerType = "arrow";
@@ -27,10 +25,10 @@ class ControlRenderer{ // 渲染逻辑与地图渲染不一样，所以单独写
 
     drawText(x, y, text){
         if (this.textArea) {
-            this.textCtx.clearRect(this.textArea.x, this.textArea.y, this.textArea.width, this.textArea.height);
+            this.controlctx.clearRect(this.textArea.x, this.textArea.y, this.textArea.width, this.textArea.height);
         }
-        this.textCtx.font = `${this.textSize}px Arial`;
-        const textWidth = Math.floor(this.textCtx.measureText(text).width + this.textSize / 2);
+        this.controlctx.font = `${this.textSize}px Arial`;
+        const textWidth = Math.floor(this.controlctx.measureText(text).width + this.textSize / 2);
     
         let textdx = 20;
     
@@ -39,7 +37,7 @@ class ControlRenderer{ // 渲染逻辑与地图渲染不一样，所以单独写
         }
     
         // Draw new text
-        this.textCtx.fillText(text, x + textdx, y + this.textSize / 2);
+        this.controlctx.fillText(text, x + textdx, y + this.textSize / 2);
     
         // Update textArea
         this.textArea = {
@@ -168,6 +166,7 @@ export class Controler{
         this.lastY = event.clientY;
         this.controlRenderer.pointerType = "grab";
         // console.log("down");
+
     }
 
     #mouseMove(event){

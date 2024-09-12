@@ -39,7 +39,7 @@ class Renderer{ // 渲染器 基类
         // 更新 previousZoomLevel
         this.previousZoomLevel = zoomLevel;
 
-        console.log(`Zoom level: ${zoomLevel}, Scale: ${scale}`);
+        // console.log(`Zoom level: ${zoomLevel}, Scale: ${scale}`);
     }
 
     // debug function
@@ -293,6 +293,7 @@ export class VectorRenderer extends Renderer{ // 矢量渲染器
 
         drawInfoBar(this.ctx, this.viewWindow, this.width, this.height); // 信息条
 
+
         // // 文字底色
         // this.ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
         // this.ctx.fillRect(this.viewWindow.x, this.viewWindow.y + this.height - 40, this.width, 40);
@@ -459,40 +460,4 @@ function drawInfoBar(ctx, viewWindow, width, height, options = {}) {
         textX,
         viewWindow.y + height
     );
-}
-
-
-/**
- * 节流函数，返回一个函数，该函数在给定的时间内最多执行一次
- * @param {Function} fn - 需要节流的函数
- * @param {Number} time - 间隔时间
- * @param {Object} context - 函数执行的上下文
- * @returns 
- */
-function throttle(fn, time, context) {
-	let lock, queuedArgs;
-
-	function later() {
-		// reset lock and call if queued
-		lock = false;
-		if (queuedArgs) {
-			wrapperFn.apply(context, queuedArgs);
-			queuedArgs = false;
-		}
-	}
-
-	function wrapperFn(...args) {
-		if (lock) {
-			// called too soon, queue to call later
-			queuedArgs = args;
-
-		} else {
-			// call and lock until later
-			fn.apply(context, args); // .apply 就是指定函数执行的上下文和参数
-			setTimeout(later, time);
-			lock = true;
-		}
-	}
-
-	return wrapperFn;
 }

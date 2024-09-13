@@ -162,8 +162,10 @@ export class Controler{
 
     #mouseDown(event){
         this.controlRenderer.isDragging = true;
-        this.lastX = event.clientX;
-        this.lastY = event.clientY;
+        const rect = this.controlCanvas.getBoundingClientRect();
+        this.lastX = event.clientX - rect.left;
+        this.lastY = event.clientY - rect.top;
+
         this.controlRenderer.pointerType = "grab";
         // console.log("down");
 

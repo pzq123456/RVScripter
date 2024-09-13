@@ -84,8 +84,9 @@ export class Canvas{
             height: this.height + 'px',
             position: 'relative',
             zIndex: this.zIndexFrom,
-            backgroundColor: 'white',
-            border: '1px solid black'
+            backgroundColor: '#ACD3DF',
+            // backgroundColor: 'black',
+
         }
 
         for(let key in style){
@@ -121,7 +122,7 @@ export class Canvas{
         myCanvas.id = name + "-" + this.uuid;
         myCanvas.style.position = 'absolute';
 
-        myCanvas.style.border = '1px solid black';
+        // myCanvas.style.border = '1px solid black';
         myCanvas.style.zIndex = z;
 
         return myCanvas;

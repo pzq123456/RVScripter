@@ -7,3 +7,15 @@ canvas {
     cursor: none; 
     /* 禁用原生鼠标光标 */
 }
+
+/* 居中left */
+#left {
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+}
+
+/* 中 h1 */
+h1 {
+    text-align: center;
+}

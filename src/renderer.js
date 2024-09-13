@@ -50,7 +50,7 @@ class Renderer{ // 渲染器 基类
         // set stroke color #CCE0C1
         this.ctx.strokeStyle = "#A4AAC1";
         // set line width
-        this.ctx.lineWidth = 5;
+        this.ctx.lineWidth = 1;
 
         // draw rect 
         this.ctx.beginPath();
